@@ -89,7 +89,6 @@ Parser::symbol_type make_NUMBER(const string &s,
                                 const location& loc)
 {
     int n = stoi(s);
-
     return Parser::make_NUMBER(n, loc);
 }
 

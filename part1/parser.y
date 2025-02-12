@@ -1,11 +1,6 @@
-/* This flex/bison example is provided to you as a starting point for your
- * assignment. You are free to use its code in your project.
- *
- * This example implements a simple calculator. You can use the '-l' flag to
- * list all the tokens found in the source file, and the '-p' flag (or no flag)
- * to parse the file and to compute the result.
- *
- * Also, if you have any suggestions for improvements, please let us know.
+/**
+ * @brief Parser for VSOP compiler
+ * Note: To be modified for part2, left as is in the "examples/flex_bison_example".
  */
 
 %skeleton "lalr1.cc" // -*- C++ -*-
@@ -51,68 +46,65 @@
 
 %code {
     #include "driver.hpp"
-
-    using namespace std;
 }
 
-// Token and symbols definitions
-%token
-    ASSIGN  ":="
-    MINUS   "-"
-    PLUS    "+"
-    STAR    "*"
-    SLASH   "/"
-    LPAREN  "("
-    RPAREN  ")"
-;
-
-// For some symbols, need to store a value
-%token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
-%nterm <int> exp
-
-// Precedence
-%left "+" "-"; // Could also do: %left PLUS MINUS
-%left "*" "/";
+// VSOP tokens definition
+%token <int>         INTEGER_LITERAL
+%token <std::string> STRING_LITERAL
+%token <std::string> TYPE_IDENTIFIER
+%token <std::string> OBJECT_IDENTIFIER
+%token LBRACE "{"          // Operators
+%token RBRACE "}"
+%token LPAR "("
+%token RPAR ")"
+%token COLON ":"
+%token SEMICOLON ";"
+%token COMMA ","
+%token PLUS "+"
+%token MINUS "-"
+%token TIMES "*"
+%token DIV "/"
+%token POW "^"
+%token DOT "."
+%token EQUAL "="
+%token LOWER "<"
+%token LOWER_EQUAL "<="
+%token ASSIGN "<-"
+%token AND "and"           //Keywords
+%token BOOL "bool"
+%token CLASS "class"
+%token DO "do"
+%token ELSE "else"
+%token EXTENDS "extends"
+%token FALSE "false"
+%token IF "if"
+%token IN "in"
+%token INT32 "int32"
+%token ISNULL "isnull"
+%token LET "let"
+%token NEW "new"
+%token NOT "not"
+%token SELF "self"
+%token STRING "string"
+%token THEN "then"
+%token TRUE "true"
+%token UNIT "unit"
+%token WHILE "while"
 
 %%
 // Grammar rules
-
-%start unit;
-unit: assignments exp  { driver.result = $2; };
-
-assignments:
-    %empty                      {}
-    | assignments assignment    {};
-
-assignment:
-    "identifier" ":=" exp { driver.add_variable($1, $3); };
-
-exp:
-    "number"
-    | "identifier"  {
-                        if (!driver.has_variable($1))
-                        {
-                            error(@1, "variable " + $1 + " not defined");
-                            YYERROR;
-                        }
-                        $$ = driver.get_variable($1);
-                    }
-    | exp "+" exp   { $$ = $1 + $3; }
-    | exp "-" exp   { $$ = $1 - $3; }
-    | exp "*" exp   { $$ = $1 * $3; }
-    | exp "/" exp   { $$ = $1 / $3; }
-    | "(" exp ")"   { $$ = $2; }
-
+part2:
+;
 %%
+
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
 {
     const position &pos = l.begin;
 
-    cerr << *(pos.filename) << ":"
-         << pos.line << ":" 
-         << pos.column << ": "
-         << m
-         << endl;
+    std::cerr   << *(pos.filename) << ":"
+                << pos.line << ":" 
+                << pos.column << ": "
+                << m
+                << std::endl;
 }
