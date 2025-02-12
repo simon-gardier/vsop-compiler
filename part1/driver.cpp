@@ -69,8 +69,8 @@ static void print_token(Parser::symbol_type token)
     position pos = token.location.begin;
     Parser::token_type type = (Parser::token_type)token.type_get();
 
-    cout << pos.line << ":"
-         << pos.column << ":"
+    cout << pos.line << ","
+         << pos.column << ","
          << type_to_string.at(type);
 
     if( type == Parser::token::TYPE_IDENTIFIER || 
@@ -78,12 +78,12 @@ static void print_token(Parser::symbol_type token)
         type == Parser::token::STRING_LITERAL)
     {
         string value = token.value.as<string>();
-        cout << ":" << value;
+        cout << "," << value;
     }
     else if (type == Parser::token::INTEGER_LITERAL)
     {
         int value = token.value.as<int>();
-        cout << ":" << value;
+        cout << "," << value;
     }
     cout << endl;
 }

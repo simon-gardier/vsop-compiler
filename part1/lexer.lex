@@ -15,7 +15,8 @@
 
     static void print_error(const position &pos, const std::string &m);
     // Code run each time a pattern is matched.
-    #define YY_USER_ACTION  loc.columns(yyleng);
+    static void update_location(const char *text, int len, location &loc);
+    #define YY_USER_ACTION  update_location(yytext, yyleng, loc);
     // Global variable used to maintain the current location.
     location loc;
     // Global variable used to maintain of a String when encountered.
@@ -40,10 +41,9 @@ type_identifier     [A-Z][a-zA-Z_0-9]*
 object_identifier   [a-z][a-zA-Z_0-9]*
 int_literal         [0-9]+
 hex_literal         "0x"[0-9a-fA-F]+
-blank               [ \t\r\n]
+blank               [ \b\t\n\r]
 newline             \n
-/* TODO part1 : Est-ce qu'on doit transformer les sous chaines du type "\n" en "\x0A" ou uniquement le caractère '\n' ? De même pour les semblables (\t, \v,...) */
-esc_seq             \\[btnr]|[\x00-\x1F\x7F-\xFF]|["\\]
+esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
 
 %% //Start Lexer rules
 %{
@@ -61,7 +61,7 @@ esc_seq             \\[btnr]|[\x00-\x1F\x7F-\xFF]|["\\]
 <COMMENT>{
     "(*"        { comment_nesting++; }
     "*)"        { if (--comment_nesting == 0) BEGIN(INITIAL); }
-    \n          { loc.lines(1); loc.step(); }
+    \n          loc.step();
     .           loc.step();
     <<EOF>>     { print_error(loc.begin, "Multi line comment must be terminated before EOF"); return Parser::make_YYerror(loc); }
 }
@@ -69,7 +69,8 @@ esc_seq             \\[btnr]|[\x00-\x1F\x7F-\xFF]|["\\]
     /* String literals rules */
 "\""            { string_buf.clear(); BEGIN(STRING); }
 <STRING>{
-    "\""        { BEGIN(INITIAL); return Parser::make_STRING_LITERAL(string_buf, loc); }
+    "\""        { BEGIN(INITIAL); return Parser::make_STRING_LITERAL("\""+string_buf+"\"", loc); }
+    \\[ \b\t\r]*\n[ \b\t\r]*  loc.step();
     \n          { print_error(loc.begin, "\\n is forbiden in string"); return Parser::make_YYerror(loc); }
     {esc_seq}   {   
                     if(yytext[0] == '\\')
@@ -78,8 +79,8 @@ esc_seq             \\[btnr]|[\x00-\x1F\x7F-\xFF]|["\\]
                         switch (c) {
                             case 'b': string_buf += "\\x08"; break;
                             case 't': string_buf += "\\x09"; break;
-                            case 'n': string_buf += "\\x0A"; break;
-                            case 'r': string_buf += "\\x0D"; break;
+                            case 'n': string_buf += "\\x0a"; break;
+                            case 'r': string_buf += "\\x0d"; break;
                             case '"': string_buf += "\\x22"; break;
                             case '\\': string_buf += "\\x5c"; break;
                         }
@@ -182,6 +183,16 @@ void Driver::scan_begin()
     {
         std::cerr << "cannot open " << source_file << ": " << strerror(errno) << std::endl;
         exit(EXIT_FAILURE);
+    }
+}
+
+static void update_location(const char *text, int len, location &loc) {
+    for (int i = 0; i < len; ++i) {
+        if (text[i] == '\n') {
+            loc.lines(1);
+        } else {
+            loc.columns(1);
+        }
     }
 }
 
