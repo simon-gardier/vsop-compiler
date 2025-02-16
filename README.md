@@ -9,4 +9,4 @@ ls
 ```
 # Test regex: https://regex101.com/
 
-# Tar to submit work: `cp -r part1 vsopcompiler; tar cfJ vsopcompiler.tar.xz vsopcompiler`
+Tar to submit work: `cp -r part1 vsopcompiler; tar cfJ vsopcompiler.tar.xz vsopcompiler`
