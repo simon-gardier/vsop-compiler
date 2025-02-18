@@ -22,8 +22,8 @@ static const map<Parser::token_type, string> type_to_string = {
     {Parser::token::INTEGER_LITERAL,    "integer-literal"},
     {Parser::token::LBRACE,             "lbrace"},          //Operators
     {Parser::token::RBRACE,             "rbrace"},
-    {Parser::token::LPAR,               "lparen"},
-    {Parser::token::RPAR,               "rparen"},
+    {Parser::token::LPAR,               "lpar"},
+    {Parser::token::RPAR,               "rpar"},
     {Parser::token::COLON,              "colon"},
     {Parser::token::SEMICOLON,          "semicolon"},
     {Parser::token::COMMA,              "comma"},

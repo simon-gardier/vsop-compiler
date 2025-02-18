@@ -917,7 +917,7 @@ case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
 #line 74 "lexer.lex"
-/*loc.step();*/
+loc.step();
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
