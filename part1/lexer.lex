@@ -83,6 +83,7 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
                             case 'r': string_buf += "\\x0d"; break;
                             case '"': string_buf += "\\x22"; break;
                             case '\\': string_buf += "\\x5c"; break;
+                            default: string_buf += yytext; break;
                         }
                     }
                     else
