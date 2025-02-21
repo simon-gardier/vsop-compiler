@@ -13,16 +13,18 @@
 
     using namespace VSOP;
 
-    static void print_error(const position &pos, const std::string &m);
-    // Code run each time a pattern is matched.
-    static void update_location(const char *text, int len, location &loc);
-    #define YY_USER_ACTION  update_location(yytext, yyleng, loc);
     // Global variable used to maintain the current location.
     location loc;
+    location string_start;
     // Global variable used to maintain of a String when encountered.
     static std::string string_buf;
     // Global variable used to maintain count of nested comments
     static unsigned int comment_nesting = 0;
+
+    static void print_error(const position &pos, const std::string &m);
+    // Code run each time a pattern is matched.
+    static void update_location(const char *text, int len, location &loc);
+    #define YY_USER_ACTION  update_location(yytext, yyleng, loc);
 %}
 
 /** Flex options
@@ -67,9 +69,9 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
 }
 
     /* String literals rules */
-"\""            { string_buf.clear(); BEGIN(STRING); }
+"\""            { string_buf.clear(); string_start = loc; BEGIN(STRING); }
 <STRING>{
-    "\""        { BEGIN(INITIAL); return Parser::make_STRING_LITERAL("\""+string_buf+"\"", loc); }
+    "\""        { BEGIN(INITIAL); return Parser::make_STRING_LITERAL("\""+string_buf+"\"", string_start); }
     \\[ \b\t\r]*\n[ \b\t\r]*  loc.step();
     \n          { print_error(loc.begin, "\\n is forbiden in string"); return Parser::make_YYerror(loc); }
     {esc_seq}   {   
