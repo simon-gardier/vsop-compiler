@@ -113,7 +113,6 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
                                             return Parser::make_YYerror(loc);
                                         }
 {int_literal}|{hex_literal} {
-                                std::cout << std::string(yytext) << std::endl;
                                 long value = std::stoi(yytext, nullptr, yytext[0] == '0' && yytext[1] == 'x' ? 16 : 10);
                                 return Parser::make_INTEGER_LITERAL(value, loc);
                             }

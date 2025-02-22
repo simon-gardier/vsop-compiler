@@ -56,7 +56,8 @@
         "xlocinfo": "cpp",
         "sstream": "cpp",
         "iomanip": "cpp",
-        "deque": "cpp"
+        "deque": "cpp",
+        "stack": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
