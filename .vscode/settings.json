@@ -54,7 +54,9 @@
         "xiosbase": "cpp",
         "xlocbuf": "cpp",
         "xlocinfo": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "iomanip": "cpp",
+        "deque": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

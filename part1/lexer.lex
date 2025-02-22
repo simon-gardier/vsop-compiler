@@ -7,6 +7,7 @@
     #include <iostream>
     #include <sstream>
     #include <iomanip>
+    #include <stack>
 
     #include "parser.hpp"
     #include "driver.hpp"
@@ -16,6 +17,7 @@
     // Global variable used to maintain the current location.
     location loc;
     location string_start;
+    std::stack<location> comments_start;
     // Global variable used to maintain of a String when encountered.
     static std::string string_buf;
     // Global variable used to maintain count of nested comments
@@ -59,13 +61,13 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
 "//".*          loc.step();
 
     /* Comment nesting rules */
-"(*"            { comment_nesting = 1; BEGIN(COMMENT); }
+"(*"            { comments_start.push(loc); BEGIN(COMMENT); }
 <COMMENT>{
-    "(*"        { comment_nesting++; }
-    "*)"        { if (--comment_nesting == 0) BEGIN(INITIAL); }
+    "(*"        { comments_start.push(loc); }
+    "*)"        { comments_start.pop(); if (comments_start.empty()) BEGIN(INITIAL); }
     \n          loc.step();
     .           loc.step();
-    <<EOF>>     { print_error(loc.begin, "Multi line comment must be terminated before EOF"); return Parser::make_YYerror(loc); }
+    <<EOF>>     { print_error(comments_start.top().begin, "Multi line comment must be terminated before EOF"); BEGIN(INITIAL); return Parser::make_YYerror(loc); }
 }
 
     /* String literals rules */
@@ -73,7 +75,7 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
 <STRING>{
     "\""        { BEGIN(INITIAL); return Parser::make_STRING_LITERAL("\""+string_buf+"\"", string_start); }
     \\[ \b\t\r]*\n[ \b\t\r]*  loc.step();
-    \n          { print_error(loc.begin, "\\n is forbiden in string"); return Parser::make_YYerror(loc); }
+    \n          { print_error(loc.begin, "\\n is forbiden in string"); BEGIN(INITIAL); return Parser::make_YYerror(loc); }
     {esc_seq}   {   
                     if(yytext[0] == '\\')
                     {
@@ -95,9 +97,9 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
                         string_buf += hex_representation.str();
                     }
                 }
-    \\.         { print_error(loc.begin, "unknown escape sequence starting with : '"+ std::string(1, yytext[1])+"'"); return Parser::make_YYerror(loc); }
+    \\.         { print_error(loc.begin, "unknown escape sequence starting with : '"+ std::string(1, yytext[1])+"'"); BEGIN(INITIAL); return Parser::make_YYerror(loc); }
     .           { string_buf += yytext[0]; }
-    <<EOF>>     { print_error(loc.begin, "string must be terminated before EOF"); return Parser::make_YYerror(loc); }
+    <<EOF>>     { print_error(loc.begin, "string must be terminated before EOF"); BEGIN(INITIAL); return Parser::make_YYerror(loc); }
 }
 
     /* Integer literals rules */
