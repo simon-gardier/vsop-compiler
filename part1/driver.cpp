@@ -1,26 +1,23 @@
 /**
- * @brief Driver for VSOP compiler
+ * @brief Driver for VSOP compiler. Based on course example
  */
-
 #include <iostream>
 #include <string>
 #include <map>
-
 #include "driver.hpp"
 #include "parser.hpp"
-
-using namespace std;
 using namespace VSOP;
 
 /**
- * @brief Map a token type to a string.
+ * @brief Map a token type to its string representation for prints.
  */
-static const map<Parser::token_type, string> type_to_string = {
+static const std::map<Parser::token_type, std::string> type_to_string = {
     {Parser::token::TYPE_IDENTIFIER,    "type-identifier"},
     {Parser::token::OBJECT_IDENTIFIER,  "object-identifier"},
     {Parser::token::STRING_LITERAL,     "string-literal"},
     {Parser::token::INTEGER_LITERAL,    "integer-literal"},
-    {Parser::token::LBRACE,             "lbrace"},          //Operators
+    // Operators
+    {Parser::token::LBRACE,             "lbrace"},
     {Parser::token::RBRACE,             "rbrace"},
     {Parser::token::LPAR,               "lpar"},
     {Parser::token::RPAR,               "rpar"},
@@ -37,7 +34,8 @@ static const map<Parser::token_type, string> type_to_string = {
     {Parser::token::LOWER,              "lower"},
     {Parser::token::LOWER_EQUAL,        "lower-equal"},
     {Parser::token::ASSIGN,             "assign"},
-    {Parser::token::AND,                "and"},             //Keywords
+    {Parser::token::AND,                "and"},
+    //Keywords
     {Parser::token::BOOL,               "bool"},
     {Parser::token::CLASS,              "class"},
     {Parser::token::DO,                 "do"},
@@ -69,64 +67,70 @@ static void print_token(Parser::symbol_type token)
     position pos = token.location.begin;
     Parser::token_type type = (Parser::token_type)token.type_get();
 
-    cout << pos.line << ","
-         << pos.column << ","
-         << type_to_string.at(type);
+    std::cout   << pos.line << ","
+                << pos.column << ","
+                << type_to_string.at(type);
 
     if( type == Parser::token::TYPE_IDENTIFIER || 
-        type == Parser::token::OBJECT_IDENTIFIER ||
-        type == Parser::token::STRING_LITERAL)
+        type == Parser::token::OBJECT_IDENTIFIER)
     {
-        string value = token.value.as<string>();
-        cout << "," << value;
+        std::string value = token.value.as<std::string>();
+        std::cout << "," << value;
+    }
+    else if (type == Parser::token::STRING_LITERAL)
+    {
+        std::string value = token.value.as<std::string>();
+        std::cout << "," << "\"" << value << "\"";
     }
     else if (type == Parser::token::INTEGER_LITERAL)
     {
         int value = token.value.as<int>();
-        cout << "," << value;
+        std::cout << "," << value;
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
+/**
+ * @brief Lex the source_file and fill a vector with the tokens found
+ * 
+ * @return int 0 if no lexing error found, 1 else
+ */
 int Driver::lex()
 {
     scan_begin();
-
     int error = 0;
-
     while (true)
     {
         Parser::symbol_type token = yylex();
-
         if ((Parser::token_type)token.type_get() == Parser::token::YYEOF)
             break;
-
         if ((Parser::token_type)token.type_get() != Parser::token::YYerror)
             tokens.push_back(token);
-
         else
+        {
             error = 1;
+            break;
+        }
     }
-
     scan_end();
-
     return error;
 }
 
+/**
+ * @brief Parse the source_file, place holder for part 2.
+ * 
+ * @return int 0 if no parsing error, 1 else 
+ */
 int Driver::parse()
 {
-    scan_begin();
-
-    parser = new Parser(*this);
-
-    int res = parser->parse();
-    scan_end();
-
-    delete parser;
-
-    return res;
+    std::cout << "Parser will be implemented in part 2" << std::endl;
+    return 0;
 }
 
+/**
+ * @brief Prints all the tokens that have been pushed in the vector tokens
+ * 
+ */
 void Driver::print_tokens()
 {
     for (auto token : tokens)

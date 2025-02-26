@@ -1,6 +1,5 @@
 /**
- * @brief Parser for VSOP compiler
- * Note: To be modified for part2, left as is in the "examples/flex_bison_example".
+ * @brief Parser for VSOP compiler. Based on course example
  */
 
 %skeleton "lalr1.cc" // -*- C++ -*-
@@ -53,7 +52,8 @@
 %token <std::string> STRING_LITERAL
 %token <std::string> TYPE_IDENTIFIER
 %token <std::string> OBJECT_IDENTIFIER
-%token LBRACE "{"          // Operators
+// Operators
+%token LBRACE "{"
 %token RBRACE "}"
 %token LPAR "("
 %token RPAR ")"
@@ -70,7 +70,8 @@
 %token LOWER "<"
 %token LOWER_EQUAL "<="
 %token ASSIGN "<-"
-%token AND "and"           //Keywords
+// Keywords
+%token AND "and"
 %token BOOL "bool"
 %token CLASS "class"
 %token DO "do"
@@ -92,7 +93,7 @@
 %token WHILE "while"
 
 %%
-// Grammar rules
+// Grammar rules, place holder for part 2.
 part2:
 ;
 %%

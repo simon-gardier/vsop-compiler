@@ -1,15 +1,16 @@
 CXX 			= clang++
 
-CXXFLAGS 		= -Wall -Wextra
+CXXFLAGS 		= -Wall -Wextra -Wno-unused-private-field
 
 BISONFLAGS 		= -d
 
 EXEC			= vsopc
 
 SRC				= main.cpp \
+				  lexer.cpp \
 				  driver.cpp \
-				  parser.cpp \
-				  lexer.cpp
+				  parser.cpp
+				  
 
 OBJ	  			= $(SRC:.cpp=.o)
 

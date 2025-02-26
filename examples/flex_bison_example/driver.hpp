@@ -1,11 +1,5 @@
-/* This flex/bison example is provided to you as a starting point for your
- * assignment. You are free to use its code in your project.
- *
- * This example implements a simple calculator. You can use the '-l' flag to
- * list all the tokens found in the source file, and the '-p' flag (or no flag)
- * to parse the file and to compute the result.
- *
- * Also, if you have any suggestions for improvements, please let us know.
+/**
+ * @brief Driver for VSOP compiler. Based on course example
  */
 
 #ifndef _DRIVER_HPP
@@ -41,33 +35,6 @@ namespace VSOP
         const std::string &get_source_file() { return source_file; }
 
         /**
-         * @brief Add a new integer variable.
-         *
-         * @param name The name of the variable.
-         * @param value The value of the variable.
-         */
-        void add_variable(std::string name, int value) { variables[name] = value; }
-
-        /**
-         * @brief Check if a variable exists.
-         *
-         * @param name The name of the variable.
-         *
-         * @return true If the variable exists.
-         * @return false If the variable does not exist.
-         */
-        bool has_variable(std::string name) { return variables.count(name); }
-
-        /**
-         * @brief Get the interger value of a variable.
-         *
-         * @param name The name of the variable.
-         *
-         * @return int The value of the variable.
-         */
-        int get_variable(std::string name) { return variables.at(name); }
-
-        /**
          * @brief Run the lexer on the source file.
          *
          * @return int 0 if no lexical error.
@@ -86,11 +53,6 @@ namespace VSOP
          */
         void print_tokens();
 
-        /**
-         * @brief The result of the computation.
-         */
-        int result;
-
     private:
         /**
          * @brief The source file.
@@ -101,11 +63,6 @@ namespace VSOP
          * @brief The parser.
          */
         VSOP::Parser *parser;
-
-        /**
-         * @brief Store the variables (names + values).
-         */
-        std::map<std::string, int> variables;
 
         /**
          * @brief Store the tokens.

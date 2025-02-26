@@ -4,7 +4,7 @@ From your project folder on Windows, run:
 ```bash
 docker run --rm -it -v "$(pwd):/home/vagrant/compilers" cffs/compilers /bin/sh
 su vagrant
-cd ~/compilers
+
 ls
 ```
 - Test regex: https://regex101.com/
