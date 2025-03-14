@@ -92,12 +92,110 @@
 %token UNIT "unit"
 %token WHILE "while"
 
-%%
-// Grammar rules, place holder for part 2.
-part2:
-;
-%%
+// Grammar rules for part 2 start here ----------------------------------------
+// Type declarations for non-terminals
+%type <int> expr
+%type <std::string> type formal formal_list block field_list field method method_list class class_list program
 
+// Operator precedence and associativity (lowest to highest)
+%left "and"
+%left "="
+%left "<" "<="
+%left "+" "-"
+%left "*" "/"
+%left "isnull"
+%left "not"
+%left "."
+
+%%
+// Grammar rules
+program:
+    class_list                  { /* Program consists of a list of classes */ }
+    ;
+
+class_list:
+    class                       { /* Single class */ }
+    | class_list class         { /* Multiple classes */ }
+    ;
+
+class:
+    "class" TYPE_IDENTIFIER "{" field_list method_list "}"  { /* Class definition */ }
+    | "class" TYPE_IDENTIFIER "extends" TYPE_IDENTIFIER "{" field_list method_list "}"  { /* Class with inheritance */ }
+    ;
+
+field_list:
+    %empty                     { /* Empty field list */ }
+    | field_list field        { /* List of fields */ }
+    ;
+
+field:
+    OBJECT_IDENTIFIER ":" type "<-" expr ";"  { /* Field with initialization */ }
+    | OBJECT_IDENTIFIER ":" type ";"          { /* Field without initialization */ }
+    ;
+
+method_list:
+    %empty                     { /* Empty method list */ }
+    | method_list method      { /* List of methods */ }
+    ;
+
+method:
+    OBJECT_IDENTIFIER "(" formal_list ")" ":" type block  { /* Method definition */ }
+    ;
+
+formal_list:
+    %empty                     { /* Empty formal list */ }
+    | formal                   { /* Single formal */ }
+    | formal_list "," formal   { /* Multiple formals */ }
+    ;
+
+formal:
+    OBJECT_IDENTIFIER ":" type  { /* Formal parameter */ }
+    ;
+
+type:
+    "int32"                    { /* Integer type */ }
+    | "bool"                   { /* Boolean type */ }
+    | "string"                 { /* String type */ }
+    | "unit"                   { /* Unit type */ }
+    | TYPE_IDENTIFIER         { /* User-defined type */ }
+    ;
+
+block:
+    "{" expr "}"              { /* Single expression block */ }
+    ;
+
+expr:
+    INTEGER_LITERAL           { /* Integer literal */ }
+    | STRING_LITERAL         { /* String literal */ }
+    | "true"                 { /* Boolean true */ }
+    | "false"                { /* Boolean false */ }
+    | OBJECT_IDENTIFIER      { /* Object identifier */ }
+    | "self"                 { /* Self reference */ }
+    | "(" expr ")"           { /* Parenthesized expression */ }
+    | "not" expr             { /* Logical not */ }
+    | expr "and" expr        { /* Logical and */ }
+    | expr "=" expr          { /* Equality */ }
+    | expr "<" expr          { /* Less than */ }
+    | expr "<=" expr         { /* Less than or equal */ }
+    | expr "+" expr          { /* Addition */ }
+    | expr "-" expr          { /* Subtraction */ }
+    | expr "*" expr          { /* Multiplication */ }
+    | expr "/" expr          { /* Division */ }
+    | expr "^" expr          { /* Power */ }
+    | "-" expr               { /* Unary minus */ }
+    | "isnull" expr          { /* Null test */ }
+    | "while" expr "do" expr { /* While loop */ }
+    | "if" expr "then" expr  { /* If-then */ }
+    | "if" expr "then" expr "else" expr  { /* If-then-else */ }
+    | "let" OBJECT_IDENTIFIER ":" type "<-" expr "in" expr  { /* Let binding */ }
+    | OBJECT_IDENTIFIER "<-" expr  { /* Assignment */ }
+    | expr "." OBJECT_IDENTIFIER "(" ")"  { /* Method call without arguments */ }
+    | expr "." OBJECT_IDENTIFIER "(" expr ")"  { /* Method call with one argument */ }
+    | "new" TYPE_IDENTIFIER   { /* Object creation */ }
+    | block                   { /* Block expression */ }
+    ;
+%%
+// Grammar rules for part 2 ends here 
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
 {
