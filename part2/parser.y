@@ -95,223 +95,338 @@
 %token UNIT "unit"
 %token WHILE "while"
 
-// Grammar rules for part 2 start here ----------------------------------------
-// Type declarations for non-terminals
-%type <std::shared_ptr<Program>> program
-%type <std::vector<std::shared_ptr<Class>>> class_list
-%type <std::shared_ptr<Class>> class
-%type <std::vector<std::shared_ptr<Field>>> field_list
-%type <std::shared_ptr<Field>> field
-%type <std::vector<std::shared_ptr<Method>>> method_list
-%type <std::shared_ptr<Method>> method
-%type <std::vector<std::shared_ptr<Formal>>> formal_list
-%type <std::shared_ptr<Formal>> formal
-%type <std::shared_ptr<Block>> block
-%type <std::vector<std::shared_ptr<Expression>>> expr_list
-%type <std::shared_ptr<Expression>> expr
-%type <std::shared_ptr<Type>> type
+// Define the types for non-terminals
+%type <VSOP::ProgramAst*> program
+%type <VSOP::ClassAst*> class
+%type <std::vector<VSOP::ClassAst*>> class_list
+%type <VSOP::FieldAst*> field
+%type <VSOP::MethodAst*> method
+%type <std::vector<VSOP::FieldAst*>> field_list
+%type <std::vector<VSOP::MethodAst*>> method_list
+%type <VSOP::FormalAst*> formal
+%type <std::vector<VSOP::FormalAst*>> formal_list formals
+%type <VSOP::ExprAst*> expr block
+%type <std::vector<VSOP::ExprAst*>> expr_list args
+%type <std::string> type
 
-// Operator precedence and associativity (lowest to highest)
-%left "and"
-%left "="
-%left "<" "<="
-%left "+" "-"
-%left "*" "/"
-%right "^"
-%right "isnull"
-%right "not"
-%left "."
+// Define operator precedence and associativity
+%right ASSIGN
+%left AND
+%nonassoc EQUAL LOWER LOWER_EQUAL
+%left PLUS MINUS
+%left TIMES DIV
+%right POW
+%right UMINUS UNOT UISNULL
+%left DOT
 
 %%
-// Grammar rules for part 2 starts here
-program: class_list { 
-    $$ = std::make_shared<Program>($1);
-    driver.result = $$;
-}
+// Grammar rules for VSOP language
 
-class_list: class class_list { 
-    $2.insert($2.begin(), $1);
-    $$ = $2;
-}
-| class { 
-    $$ = std::vector<std::shared_ptr<Class>>{$1};
-}
+// Program is a list of classes
+program
+    : class_list
+        {
+            $$ = new ProgramAst();
+            $$->classes = $1;
+            driver.programAst.reset($$);
+        }
+    ;
 
-class: CLASS TYPE_IDENTIFIER EXTENDS TYPE_IDENTIFIER LBRACE field_list method_list RBRACE { 
-    $$ = std::make_shared<Class>(@$, $2, $4, $6, $7);
-}
-| CLASS TYPE_IDENTIFIER LBRACE field_list method_list RBRACE { 
-    $$ = std::make_shared<Class>(@$, $2, "Object", $4, $5);
-}
+class_list
+    : class
+        {
+            $$ = std::vector<ClassAst*>();
+            $$.push_back($1);
+        }
+    | class_list class
+        {
+            $$ = $1;
+            $$.push_back($2);
+        }
+    ;
 
-field_list: field field_list { 
-    $2.insert($2.begin(), $1);
-    $$ = $2;
-}
-| /* empty */ { 
-    $$ = std::vector<std::shared_ptr<Field>>{};
-}
+// Class definition
+class
+    : "class" TYPE_IDENTIFIER "{" field_list method_list "}"
+        {
+            $$ = new ClassAst($2);
+            $$->fields = $4;
+            $$->methods = $5;
+        }
+    | "class" TYPE_IDENTIFIER "extends" TYPE_IDENTIFIER "{" field_list method_list "}"
+        {
+            $$ = new ClassAst($2, $4);
+            $$->fields = $6;
+            $$->methods = $7;
+        }
+    ;
 
-field: OBJECT_IDENTIFIER COLON type SEMICOLON { 
-    $$ = std::make_shared<Field>(@$, $1, $3, nullptr);
-}
-| OBJECT_IDENTIFIER COLON type ASSIGN expr SEMICOLON { 
-    $$ = std::make_shared<Field>(@$, $1, $3, $5);
-}
+field_list
+    : /* empty */
+        {
+            $$ = std::vector<FieldAst*>();
+        }
+    | field_list field
+        {
+            $$ = $1;
+            $$.push_back($2);
+        }
+    ;
 
-method_list: method method_list { 
-    $2.insert($2.begin(), $1);
-    $$ = $2;
-}
-| /* empty */ { 
-    $$ = std::vector<std::shared_ptr<Method>>{};
-}
+method_list
+    : /* empty */
+        {
+            $$ = std::vector<MethodAst*>();
+        }
+    | method_list method
+        {
+            $$ = $1;
+            $$.push_back($2);
+        }
+    ;
 
-method: OBJECT_IDENTIFIER LPAR formal_list RPAR COLON type block { 
-    $$ = std::make_shared<Method>(@$, $1, $3, $6, $7);
-}
-| OBJECT_IDENTIFIER LPAR RPAR COLON type block { 
-    $$ = std::make_shared<Method>(@$, $1, std::vector<std::shared_ptr<Formal>>{}, $5, $6);
-}
+// Field definition
+field
+    : OBJECT_IDENTIFIER ":" type ";"
+        {
+            $$ = new FieldAst($1, $3);
+        }
+    | OBJECT_IDENTIFIER ":" type "<-" expr ";"
+        {
+            $$ = new FieldAst($1, $3, $5);
+        }
+    ;
 
-formal_list: formal COMMA formal_list { 
-    $3.insert($3.begin(), $1);
-    $$ = $3;
-}
-| formal { 
-    $$ = std::vector<std::shared_ptr<Formal>>{$1};
-}
+// Method definition
+method
+    : OBJECT_IDENTIFIER "(" formals ")" ":" type block
+        {
+            $$ = new MethodAst($1, $6, $7);
+            $$->formals = $3;
+        }
+    ;
 
-formal: OBJECT_IDENTIFIER COLON type { 
-    $$ = std::make_shared<Formal>(@$, $1, $3);
-}
+// Formal parameters
+formals
+    : /* empty */
+        {
+            $$ = std::vector<FormalAst*>();
+        }
+    | formal_list
+        {
+            $$ = $1;
+        }
+    ;
 
-block: LBRACE expr_list RBRACE { 
-    $$ = std::make_shared<Block>(@$, $2);
-}
+formal_list
+    : formal
+        {
+            $$ = std::vector<FormalAst*>();
+            $$.push_back($1);
+        }
+    | formal_list "," formal
+        {
+            $$ = $1;
+            $$.push_back($3);
+        }
+    ;
 
-expr_list: expr SEMICOLON expr_list { 
-    $3.insert($3.begin(), $1);
-    $$ = $3;
-}
-| expr { 
-    $$ = std::vector<std::shared_ptr<Expression>>{$1};
-}
+formal
+    : OBJECT_IDENTIFIER ":" type
+        {
+            $$ = new FormalAst($1, $3);
+        }
+    ;
 
-expr: IF expr THEN expr { 
-    $$ = std::make_shared<If>(@$, $2, $4, nullptr);
-}
-| IF expr THEN expr ELSE expr { 
-    $$ = std::make_shared<If>(@$, $2, $4, $6);
-}
-| WHILE expr DO expr { 
-    $$ = std::make_shared<While>(@$, $2, $4);
-}
-| LET OBJECT_IDENTIFIER COLON type IN expr { 
-    $$ = std::make_shared<Let>(@$, $2, $4, nullptr, $6);
-}
-| LET OBJECT_IDENTIFIER COLON type ASSIGN expr IN expr { 
-    $$ = std::make_shared<Let>(@$, $2, $4, $6, $8);
-}
-| OBJECT_IDENTIFIER ASSIGN expr { 
-    $$ = std::make_shared<Assign>(@$, $1, $3);
-}
-| NOT expr { 
-    $$ = std::make_shared<UnaryOp>(@$, "not", $2);
-}
-| ISNULL expr { 
-    $$ = std::make_shared<UnaryOp>(@$, "isnull", $2);
-}
-| MINUS expr { 
-    $$ = std::make_shared<UnaryOp>(@$, "-", $2);
-}
-| expr AND expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "and", $1, $3);
-}
-| expr EQUAL expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "=", $1, $3);
-}
-| expr LOWER expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "<", $1, $3);
-}
-| expr LOWER_EQUAL expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "<=", $1, $3);
-}
-| expr PLUS expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "+", $1, $3);
-}
-| expr MINUS expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "-", $1, $3);
-}
-| expr TIMES expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "*", $1, $3);
-}
-| expr DIV expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "/", $1, $3);
-}
-| expr POW expr { 
-    $$ = std::make_shared<BinaryOp>(@$, "^", $1, $3);
-}
-| expr DOT OBJECT_IDENTIFIER LPAR expr_list RPAR { 
-    $$ = std::make_shared<Call>(@$, $1, $3, $5);
-}
-| expr DOT OBJECT_IDENTIFIER LPAR RPAR { 
-    $$ = std::make_shared<Call>(@$, $1, $3, std::vector<std::shared_ptr<Expression>>{});
-}
-| OBJECT_IDENTIFIER LPAR expr_list RPAR { 
-    $$ = std::make_shared<Call>(@$, std::make_shared<Self>(@$), $1, $3);
-}
-| OBJECT_IDENTIFIER LPAR RPAR { 
-    $$ = std::make_shared<Call>(@$, std::make_shared<Self>(@$), $1, std::vector<std::shared_ptr<Expression>>{});
-}
-| NEW TYPE_IDENTIFIER { 
-    $$ = std::make_shared<New>(@$, $2);
-}
-| OBJECT_IDENTIFIER { 
-    $$ = std::make_shared<ObjectIdentifier>(@$, $1);
-}
-| SELF { 
-    $$ = std::make_shared<Self>(@$);
-}
-| INTEGER_LITERAL { 
-    $$ = std::make_shared<IntegerLiteral>(@$, $1);
-}
-| STRING_LITERAL { 
-    $$ = std::make_shared<StringLiteral>(@$, $1);
-}
-| TRUE { 
-    $$ = std::make_shared<BooleanLiteral>(@$, true);
-}
-| FALSE { 
-    $$ = std::make_shared<BooleanLiteral>(@$, false);
-}
-| UNIT { 
-    $$ = std::make_shared<Unit>(@$);
-}
-| LPAR expr RPAR { 
-    $$ = $2;
-}
-| block { 
-    $$ = $1;
-}
+// Types
+type
+    : TYPE_IDENTIFIER
+        {
+            $$ = $1;
+        }
+    | "int32"
+        {
+            $$ = "int32";
+        }
+    | "bool"
+        {
+            $$ = "bool";
+        }
+    | "string"
+        {
+            $$ = "string";
+        }
+    | "unit"
+        {
+            $$ = "unit";
+        }
+    ;
 
-type: INT32 { 
-    $$ = std::make_shared<Type>(@$, "int32");
-}
-| BOOL { 
-    $$ = std::make_shared<Type>(@$, "bool");
-}
-| STRING { 
-    $$ = std::make_shared<Type>(@$, "string");
-}
-| UNIT { 
-    $$ = std::make_shared<Type>(@$, "unit");
-}
-| TYPE_IDENTIFIER { 
-    $$ = std::make_shared<Type>(@$, $1);
-}
+// Block of expressions
+block
+    : "{" expr_list "}"
+        {
+            BlockExprAst* block = new BlockExprAst();
+            block->expressions = $2;
+            $$ = block;
+        }
+    ;
+
+expr_list
+    : expr
+        {
+            $$ = std::vector<ExprAst*>();
+            $$.push_back($1);
+        }
+    | expr_list ";" expr
+        {
+            $$ = $1;
+            $$.push_back($3);
+        }
+    ;
+
+// Expressions
+expr
+    : "if" expr "then" expr
+        {
+            $$ = new IfExprAst($2, $4);
+        }
+    | "if" expr "then" expr "else" expr
+        {
+            $$ = new IfExprAst($2, $4, $6);
+        }
+    | "while" expr "do" expr
+        {
+            $$ = new WhileExprAst($2, $4);
+        }
+    | "let" OBJECT_IDENTIFIER ":" type "in" expr
+        {
+            $$ = new LetExprAst($2, $4, nullptr, $6);
+        }
+    | "let" OBJECT_IDENTIFIER ":" type "<-" expr "in" expr
+        {
+            $$ = new LetExprAst($2, $4, $6, $8);
+        }
+    | OBJECT_IDENTIFIER "<-" expr
+        {
+            $$ = new AssignExprAst($1, $3);
+        }
+    | "not" expr %prec UNOT
+        {
+            $$ = new UnaryOpExprAst("not", $2);
+        }
+    | "-" expr %prec UMINUS
+        {
+            $$ = new UnaryOpExprAst("-", $2);
+        }
+    | "isnull" expr %prec UISNULL
+        {
+            $$ = new UnaryOpExprAst("isnull", $2);
+        }
+    | expr "=" expr
+        {
+            $$ = new BinaryOpExprAst("=", $1, $3);
+        }
+    | expr "<" expr
+        {
+            $$ = new BinaryOpExprAst("<", $1, $3);
+        }
+    | expr "<=" expr
+        {
+            $$ = new BinaryOpExprAst("<=", $1, $3);
+        }
+    | expr "+" expr
+        {
+            $$ = new BinaryOpExprAst("+", $1, $3);
+        }
+    | expr "-" expr
+        {
+            $$ = new BinaryOpExprAst("-", $1, $3);
+        }
+    | expr "*" expr
+        {
+            $$ = new BinaryOpExprAst("*", $1, $3);
+        }
+    | expr "/" expr
+        {
+            $$ = new BinaryOpExprAst("/", $1, $3);
+        }
+    | expr "^" expr
+        {
+            $$ = new BinaryOpExprAst("^", $1, $3);
+        }
+    | expr "and" expr
+        {
+            $$ = new BinaryOpExprAst("and", $1, $3);
+        }
+    | OBJECT_IDENTIFIER "(" args ")"
+        {
+            CallExprAst* call = new CallExprAst(new SelfExprAst(), $1);
+            call->arguments = $3;
+            $$ = call;
+        }
+    | expr "." OBJECT_IDENTIFIER "(" args ")"
+        {
+            CallExprAst* call = new CallExprAst($1, $3);
+            call->arguments = $5;
+            $$ = call;
+        }
+    | "new" TYPE_IDENTIFIER
+        {
+            $$ = new NewExprAst($2);
+        }
+    | OBJECT_IDENTIFIER
+        {
+            $$ = new ObjectIdExprAst($1);
+        }
+    | "self"
+        {
+            $$ = new SelfExprAst();
+        }
+    | INTEGER_LITERAL
+        {
+            $$ = new IntegerLiteralExprAst($1);
+        }
+    | STRING_LITERAL
+        {
+            $$ = new StringLiteralExprAst($1);
+        }
+    | "true"
+        {
+            $$ = new BooleanLiteralExprAst(true);
+        }
+    | "false"
+        {
+            $$ = new BooleanLiteralExprAst(false);
+        }
+    | "(" ")"
+        {
+            $$ = new UnitExprAst();
+        }
+    | "(" expr ")"
+        {
+            $$ = $2;
+        }
+    | block
+        {
+            $$ = $1;
+        }
+    ;
+
+// Method call arguments
+args
+    : /* empty */
+        {
+            $$ = std::vector<ExprAst*>();
+        }
+    | expr_list
+        {
+            $$ = $1;
+        }
+    ;
+
 %%
-// Grammar rules for part 2 ends here 
+
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
 {

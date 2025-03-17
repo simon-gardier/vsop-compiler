@@ -10,14 +10,8 @@
  #include <map>
  #include <memory>
  
- // Forward declaration to avoid circular dependency
- namespace VSOP
- {
-     class Program;
- }
- 
  #include "parser.hpp"
- 
+ #include "ast.hpp"
  // Give prototype of yylex() function, then declare it.
  #define YY_DECL VSOP::Parser::symbol_type yylex()
  YY_DECL;
@@ -32,7 +26,7 @@
           *
           * @param _source_file The file containing the source code.
           */
-         Driver(const std::string &_source_file) : source_file(_source_file), parser(nullptr), result(nullptr) {}
+         Driver(const std::string &_source_file) : source_file(_source_file) {}
  
          /**
           * @brief Get the source file.
@@ -40,7 +34,7 @@
           * @return const std::string& The source file.
           */
          const std::string &get_source_file() { return source_file; }
- 
+        
          /**
           * @brief Run the lexer on the source file.
           *
@@ -59,11 +53,11 @@
           * @brief Print all the tokens.
           */
          void print_tokens();
- 
+
          /**
-          * @brief The AST result from parsing.
+          * @brief The AST representing the program
           */
-         std::shared_ptr<Program> result;
+         std::unique_ptr<ProgramAst> programAst;
  
      private:
          /**

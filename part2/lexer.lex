@@ -63,7 +63,7 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
 "(*"            { comments_start.push(loc); BEGIN(COMMENT); }
 <COMMENT>"(*"   { comments_start.push(loc); }
 <COMMENT>"*)"   { comments_start.pop(); if (comments_start.empty()) BEGIN(INITIAL); }
-<COMMENT>\n     { }
+<COMMENT>\n     { loc.lines(1); loc.step(); }
 <COMMENT>.      { }
 <COMMENT><<EOF>> { print_error(comments_start.top().begin, "Multi line comment must be terminated before EOF"); BEGIN(INITIAL); return Parser::make_YYerror(loc); }
 
