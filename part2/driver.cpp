@@ -6,6 +6,7 @@
 #include <map>
 #include "driver.hpp"
 #include "parser.hpp"
+#include "ast.hpp"
 using namespace VSOP;
 
 /**
@@ -117,14 +118,26 @@ int Driver::lex()
 }
 
 /**
- * @brief Parse the source_file, place holder for part 2.
+ * @brief Parse the source_file and build the AST
  * 
  * @return int 0 if no parsing error, 1 else 
  */
 int Driver::parse()
 {
-    std::cout << "Parser will be implemented in part 2" << std::endl;
-    return 0;
+    scan_begin();
+    
+    // Create a new parser
+    parser = new Parser(*this);
+    
+    // Parse the input
+    int res = parser->parse();
+    
+    scan_end();
+    
+    // Delete the parser
+    delete parser;
+    
+    return res;
 }
 
 /**

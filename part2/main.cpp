@@ -6,6 +6,7 @@
 #include <string>
 
 #include "driver.hpp"
+#include "ast.hpp"
 
 using namespace std;
 
@@ -63,8 +64,11 @@ int main(int argc, char const *argv[])
     case Mode::PARSE:
         res = driver.parse();
 
-        if (res == 0)
-            cout << "Result: " << driver.result << endl;
+        if (res == 0 && driver.result)
+        {
+            driver.result->print(cout);
+            cout << endl;
+        }
 
         return res;
     }

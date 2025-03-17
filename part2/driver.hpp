@@ -8,6 +8,13 @@
  #include <string>
  #include <vector>
  #include <map>
+ #include <memory>
+ 
+ // Forward declaration to avoid circular dependency
+ namespace VSOP
+ {
+     class Program;
+ }
  
  #include "parser.hpp"
  
@@ -25,7 +32,7 @@
           *
           * @param _source_file The file containing the source code.
           */
-         Driver(const std::string &_source_file) : source_file(_source_file) {}
+         Driver(const std::string &_source_file) : source_file(_source_file), parser(nullptr), result(nullptr) {}
  
          /**
           * @brief Get the source file.
@@ -52,6 +59,11 @@
           * @brief Print all the tokens.
           */
          void print_tokens();
+ 
+         /**
+          * @brief The AST result from parsing.
+          */
+         std::shared_ptr<Program> result;
  
      private:
          /**
@@ -82,4 +94,3 @@
  }
  
  #endif
- 
