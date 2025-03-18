@@ -897,7 +897,7 @@ YY_RULE_SETUP
 case 6:
 YY_RULE_SETUP
 #line 61 "lexer.lex"
-{ long value = std::stoi(yytext, nullptr, yytext[0] == '0' && yytext[1] == 'x' ? 16 : 10); return Parser::make_INTEGER_LITERAL(value, loc); }
+{ long value = std::stoi(yytext, nullptr, yytext[0] == '0' && yytext[1] == 'x' ? 16 : 10); return Parser::make_INTEGER_LIT(value, loc); }
 	YY_BREAK
 /* Comments rules */
 case 7:
@@ -939,7 +939,7 @@ YY_RULE_SETUP
 case 13:
 YY_RULE_SETUP
 #line 74 "lexer.lex"
-{ BEGIN(INITIAL); return Parser::make_STRING_LITERAL(string_buf, string_start); }
+{ BEGIN(INITIAL); return Parser::make_STRING_LIT(string_buf, string_start); }
 	YY_BREAK
 case 14:
 /* rule 14 can match eol */
@@ -1172,12 +1172,12 @@ return Parser::make_WHILE(loc);
 case 56:
 YY_RULE_SETUP
 #line 131 "lexer.lex"
-{ return Parser::make_TYPE_IDENTIFIER(yytext, loc); }
+{ return Parser::make_TYPE_ID(yytext, loc); }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
 #line 132 "lexer.lex"
-{ return Parser::make_OBJECT_IDENTIFIER(yytext, loc); }
+{ return Parser::make_OBJECT_ID(yytext, loc); }
 	YY_BREAK
 /* Invalid characters*/
 case 58:

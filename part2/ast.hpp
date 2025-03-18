@@ -1,440 +1,180 @@
-/**
- * @brief Abstract Syntax Tree for VSOP compiler
- */
-
 #ifndef _AST_HPP
 #define _AST_HPP
 
 #include <string>
+#include <iostream>
+#include <fstream>
 #include <vector>
-#include <memory>
 #include <algorithm>
-#include <optional>
+#include <unordered_map>
+#include <map>
 
-namespace VSOP
-{
-    // Forward declarations
-    class ExprAst;
-    class ClassAst;
-    class FieldAst;
-    class MethodAst;
-    class FormalAst;
+class BasicAst {
+public:
+    BasicAst(int line, int column);
+    virtual std::string getString() const = 0;
+    void printSemanticError(const std::string &message) const;
+    void setSourceFile(const std::string &sourceFile) const;
+    virtual ~BasicAst();
+    int line, column;
+};
 
-    /**
-     * @brief Program AST node representing the entire program
-     */
-    class ProgramAst
-    {
-    public:
-        /**
-         * @brief Constructor for ProgramAst
-         */
-        ProgramAst() {}
+class ExprAst : public BasicAst{
+public:
+    ExprAst(int line, int column) : BasicAst(line, column){}
+    std::string getType() const;
+    virtual ~ExprAst() override;
+protected:
+    std::string type;
+};
 
-        /**
-         * @brief Destructor for ProgramAst
-         */
-        ~ProgramAst();
+class ExprBlockAst : public ExprAst{
+public:
+    ExprBlockAst(int line, int column, std::vector<ExprAst*> exprs);
+    std::string getString() const override;
+    ~ExprBlockAst();
+    std::vector<ExprAst*> exprs;
+};
 
-        /**
-         * @brief Get string representation of the program
-         * 
-         * @return std::string String representation of the program
-         */
-        std::string getString() const;
+class ExprIfAst : public ExprAst{
+public:
+    ExprIfAst(int line, int column, ExprAst *exprCond, ExprAst *exprThen);
+    ExprIfAst(int line, int column, ExprAst *exprCond, ExprAst *exprThen, ExprAst *exprElse);
+    std::string getString() const override;
+    ~ExprIfAst();
+    ExprAst *exprCond, *exprThen, *exprElse;
+};
 
-        /**
-         * @brief Vector of classes in the program
-         */
-        std::vector<ClassAst*> classes;
-    };
+class ExprWhileAst : public ExprAst{
+public:
+    ExprWhileAst(int line, int column, ExprAst *exprCond, ExprAst *exprDo);
+    std::string getString() const override;
+    ~ExprWhileAst();
+    ExprAst *exprCond, *exprDo;
+};
 
-    /**
-     * @brief Class AST node representing a class definition
-     */
-    class ClassAst
-    {
-    public:
-        /**
-         * @brief Constructor for ClassAst
-         * 
-         * @param name Name of the class
-         * @param parent Parent class name (optional)
-         */
-        ClassAst(const std::string& name, const std::string& parent = "Object") 
-            : name(name), parent(parent) {}
+class ExprLetAst : public ExprAst{
+public:
+    ExprLetAst(int line, int column, std::string object_id, std::string type_id, ExprAst *exprIn);
+    ExprLetAst(int line, int column, std::string object_id, std::string type_id, ExprAst *assign, ExprAst *exprIn);
+    std::string getString() const override;
+    ~ExprLetAst();
+    std::string object_id, type_id;
+    ExprAst *assign, *exprIn;
+};
 
-        /**
-         * @brief Destructor for ClassAst
-         */
-        ~ClassAst();
+class ExprBinopAst : public ExprAst{
+public:
+    ExprBinopAst(int ine, int column, std::string operator_str, ExprAst *expr1, ExprAst *expr2);
+    std::string getString() const override;
+    ~ExprBinopAst();
+    std::string operator_str;
+    ExprAst *expr1, *expr2;
+};
 
-        /**
-         * @brief Get string representation of the class
-         * 
-         * @return std::string String representation of the class
-         */
-        std::string getString() const;
+class ExprUnopAst : public ExprAst{
+public:
+    ExprUnopAst(int line, int column, std::string operator_str, ExprAst *expr);
+    std::string getString() const override;
+    ~ExprUnopAst();
+    std::string operator_str;
+    ExprAst *expr;
+};
 
-        /**
-         * @brief Name of the class
-         */
-        std::string name;
+class ExprAssignAst : public ExprAst{
+public:
+    ExprAssignAst(int line, int column, std::string object_id, ExprAst *assign);
+    std::string getString() const override;
+    ~ExprAssignAst();
+    std::string object_id;
+    ExprAst *assign;
+};
 
-        /**
-         * @brief Parent class name
-         */
-        std::string parent;
+class ExprCallAst : public ExprAst{
+public:
+    ExprCallAst(int line, int column, ExprAst *caller, std::string object_id, std::vector<ExprAst*> args);
+    std::string getString() const override;
+    ~ExprCallAst();
+    ExprAst *caller;
+    std::string object_id;
+    std::vector<ExprAst*> args;
+};
 
-        /**
-         * @brief Fields of the class
-         */
-        std::vector<FieldAst*> fields;
+class ExprNewAst : public ExprAst{
+public:
+    ExprNewAst(int line, int column, std::string type_id);
+    std::string getString() const override;
+    ~ExprNewAst();
+    std::string type_id;
+};
 
-        /**
-         * @brief Methods of the class
-         */
-        std::vector<MethodAst*> methods;
-    };
+class ExprLiteralAst : public ExprAst{
+public:
+    ExprLiteralAst(int line, int column, std::string id, std::string type);
+    std::string getString() const override;
+    ~ExprLiteralAst();
+    std::string id, tmp_type;
+};
 
-    /**
-     * @brief Field AST node representing a class field
-     */
-    class FieldAst
-    {
-    public:
-        /**
-         * @brief Constructor for FieldAst
-         * 
-         * @param name Field name
-         * @param type Field type
-         * @param initExpr Initialization expression (optional)
-         */
-        FieldAst(const std::string& name, const std::string& type, ExprAst* initExpr = nullptr)
-            : name(name), type(type), initExpr(initExpr) {}
+class ExprObjectIdAst : public ExprAst{
+public:
+    ExprObjectIdAst(int line, int column, std::string id);
+    std::string getString() const override;
+    ~ExprObjectIdAst();
+    std::string id;
+};
 
-        /**
-         * @brief Destructor for FieldAst
-         */
-        ~FieldAst();
+class FormalAst : public BasicAst{
+public:
+    FormalAst(int line, int column, std::string parameterName, std::string parameterType);
+    std::string getString() const override;
+    ~FormalAst();
+    std::string parameterName, parameterType;
+};
 
-        /**
-         * @brief Get string representation of the field
-         * 
-         * @return std::string String representation of the field
-         */
-        std::string getString() const;
+class MethodAst : public BasicAst{
+public:
+    MethodAst(int line, int column, std::string name, std::vector<FormalAst*> formals, std::string type, ExprBlockAst* block);
+    std::string getString() const override;
+    ~MethodAst();
+    std::string name, type;
+    std::vector<FormalAst*> formals;
+    ExprBlockAst* block;
+};
 
-        /**
-         * @brief Field name
-         */
-        std::string name;
+class FieldAst : public BasicAst{
+public:
+    FieldAst(int line, int column, std::string variableName, std::string variableType);
+    FieldAst(int line, int column, std::string variableName, std::string variableType, ExprAst* assign);
+    std::string getString() const override;
+    ~FieldAst();
+    std::string variableName, variableType;
+    ExprAst* assign;
+};
 
-        /**
-         * @brief Field type
-         */
-        std::string type;
+struct ClassBody{
+    std::vector<FieldAst*> fields;
+    std::vector<MethodAst*> methods;
+};
 
-        /**
-         * @brief Initialization expression (optional)
-         */
-        ExprAst* initExpr;
-    };
+class ClassAst : public BasicAst{
+public:
+    ClassAst(int line, int column, std::string name, std::string parentName, std::vector<FieldAst*> fields, std::vector<MethodAst*> methods);
+    std::string getString() const override;
+    ~ClassAst();
 
-    /**
-     * @brief Formal parameter AST node
-     */
-    class FormalAst
-    {
-    public:
-        /**
-         * @brief Constructor for FormalAst
-         * 
-         * @param name Parameter name
-         * @param type Parameter type
-         */
-        FormalAst(const std::string& name, const std::string& type)
-            : name(name), type(type) {}
+    std::string name, parentName;
+    std::vector<FieldAst*> fields;
+    std::vector<MethodAst*> methods;
+};
 
-        /**
-         * @brief Get string representation of the formal parameter
-         * 
-         * @return std::string String representation of the formal parameter
-         */
-        std::string getString() const;
+class ProgramAst : public BasicAst{
+public:
+    ProgramAst(int line, int column, std::vector<ClassAst*> classes);
+    std::string getString() const override;
+    ~ProgramAst();
 
-        /**
-         * @brief Parameter name
-         */
-        std::string name;
-
-        /**
-         * @brief Parameter type
-         */
-        std::string type;
-    };
-
-    /**
-     * @brief Method AST node representing a class method
-     */
-    class MethodAst
-    {
-    public:
-        /**
-         * @brief Constructor for MethodAst
-         * 
-         * @param name Method name
-         * @param returnType Return type
-         * @param body Method body
-         */
-        MethodAst(const std::string& name, const std::string& returnType, ExprAst* body)
-            : name(name), returnType(returnType), body(body) {}
-
-        /**
-         * @brief Destructor for MethodAst
-         */
-        ~MethodAst();
-
-        /**
-         * @brief Get string representation of the method
-         * 
-         * @return std::string String representation of the method
-         */
-        std::string getString() const;
-
-        /**
-         * @brief Method name
-         */
-        std::string name;
-
-        /**
-         * @brief Formal parameters
-         */
-        std::vector<FormalAst*> formals;
-
-        /**
-         * @brief Return type
-         */
-        std::string returnType;
-
-        /**
-         * @brief Method body
-         */
-        ExprAst* body;
-    };
-
-    /**
-     * @brief Base class for all expressions
-     */
-    class ExprAst
-    {
-    public:
-        virtual ~ExprAst() = default;
-        virtual std::string getString() const = 0;
-    };
-
-    /**
-     * @brief Block expression
-     */
-    class BlockExprAst : public ExprAst
-    {
-    public:
-        BlockExprAst() {}
-        ~BlockExprAst() override;
-        std::string getString() const override;
-        std::vector<ExprAst*> expressions;
-    };
-
-    /**
-     * @brief If expression
-     */
-    class IfExprAst : public ExprAst
-    {
-    public:
-        IfExprAst(ExprAst* condition, ExprAst* thenExpr, ExprAst* elseExpr = nullptr)
-            : condition(condition), thenExpr(thenExpr), elseExpr(elseExpr) {}
-        ~IfExprAst() override;
-        std::string getString() const override;
-        ExprAst* condition;
-        ExprAst* thenExpr;
-        ExprAst* elseExpr;
-    };
-
-    /**
-     * @brief While expression
-     */
-    class WhileExprAst : public ExprAst
-    {
-    public:
-        WhileExprAst(ExprAst* condition, ExprAst* body)
-            : condition(condition), body(body) {}
-        ~WhileExprAst() override;
-        std::string getString() const override;
-        ExprAst* condition;
-        ExprAst* body;
-    };
-
-    /**
-     * @brief Let expression
-     */
-    class LetExprAst : public ExprAst
-    {
-    public:
-        LetExprAst(const std::string& name, const std::string& type, 
-                  ExprAst* initExpr, ExprAst* scopeExpr)
-            : name(name), type(type), initExpr(initExpr), scopeExpr(scopeExpr) {}
-        ~LetExprAst() override;
-        std::string getString() const override;
-        std::string name;
-        std::string type;
-        ExprAst* initExpr;
-        ExprAst* scopeExpr;
-    };
-
-    /**
-     * @brief Assignment expression
-     */
-    class AssignExprAst : public ExprAst
-    {
-    public:
-        AssignExprAst(const std::string& name, ExprAst* expr)
-            : name(name), expr(expr) {}
-        ~AssignExprAst() override;
-        std::string getString() const override;
-        std::string name;
-        ExprAst* expr;
-    };
-
-    /**
-     * @brief Unary operation expression
-     */
-    class UnaryOpExprAst : public ExprAst
-    {
-    public:
-        UnaryOpExprAst(const std::string& op, ExprAst* expr)
-            : op(op), expr(expr) {}
-        ~UnaryOpExprAst() override;
-        std::string getString() const override;
-        std::string op;
-        ExprAst* expr;
-    };
-
-    /**
-     * @brief Binary operation expression
-     */
-    class BinaryOpExprAst : public ExprAst
-    {
-    public:
-        BinaryOpExprAst(const std::string& op, ExprAst* left, ExprAst* right)
-            : op(op), left(left), right(right) {}
-        ~BinaryOpExprAst() override;
-        std::string getString() const override;
-        std::string op;
-        ExprAst* left;
-        ExprAst* right;
-    };
-
-    /**
-     * @brief Method call expression
-     */
-    class CallExprAst : public ExprAst
-    {
-    public:
-        CallExprAst(ExprAst* object, const std::string& methodName)
-            : object(object), methodName(methodName) {}
-        ~CallExprAst() override;
-        std::string getString() const override;
-        ExprAst* object;
-        std::string methodName;
-        std::vector<ExprAst*> arguments;
-    };
-
-    /**
-     * @brief New expression
-     */
-    class NewExprAst : public ExprAst
-    {
-    public:
-        NewExprAst(const std::string& typeName)
-            : typeName(typeName) {}
-        ~NewExprAst() override;
-        std::string getString() const override;
-        std::string typeName;
-    };
-
-    /**
-     * @brief Object identifier expression
-     */
-    class ObjectIdExprAst : public ExprAst
-    {
-    public:
-        ObjectIdExprAst(const std::string& name)
-            : name(name) {}
-        ~ObjectIdExprAst() override;
-        std::string getString() const override;
-        std::string name;
-    };
-
-    /**
-     * @brief Self expression
-     */
-    class SelfExprAst : public ExprAst
-    {
-    public:
-        SelfExprAst() {}
-        ~SelfExprAst() override;
-        std::string getString() const override;
-    };
-
-    /**
-     * @brief Integer literal expression
-     */
-    class IntegerLiteralExprAst : public ExprAst
-    {
-    public:
-        IntegerLiteralExprAst(int value)
-            : value(value) {}
-        ~IntegerLiteralExprAst() override;
-        std::string getString() const override;
-        int value;
-    };
-
-    /**
-     * @brief String literal expression
-     */
-    class StringLiteralExprAst : public ExprAst
-    {
-    public:
-        StringLiteralExprAst(const std::string& value)
-            : value(value) {}
-        ~StringLiteralExprAst() override;
-        std::string getString() const override;
-        std::string value;
-    };
-
-    /**
-     * @brief Boolean literal expression
-     */
-    class BooleanLiteralExprAst : public ExprAst
-    {
-    public:
-        BooleanLiteralExprAst(bool value)
-            : value(value) {}
-        ~BooleanLiteralExprAst() override;
-        std::string getString() const override;
-        bool value;
-    };
-
-    /**
-     * @brief Unit expression
-     */
-    class UnitExprAst : public ExprAst
-    {
-    public:
-        UnitExprAst() {}
-        ~UnitExprAst() override;
-        std::string getString() const override;
-    };
-}
+    std::vector<ClassAst*> classes;
+};
 
 #endif

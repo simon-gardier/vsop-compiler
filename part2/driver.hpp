@@ -48,7 +48,11 @@
           * @return int 0 if no syntax or lexical error.
           */
          int parse();
- 
+
+        /**
+         * @brief Result of the parsing
+         */
+        int result;
          /**
           * @brief Print all the tokens.
           */

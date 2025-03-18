@@ -1,5 +1,11 @@
-/**
- * @brief Parser for VSOP compiler. Based on course example
+/* This flex/bison example is provided to you as a starting point for your
+ * assignment. You are free to use its code in your project.
+ *
+ * This example implements a simple calculator. You can use the '-l' flag to
+ * list all the tokens found in the source file, and the '-p' flag (or no flag)
+ * to parse the file and to compute the result.
+ *
+ * Also, if you have any suggestions for improvements, please let us know.
  */
 
 %skeleton "lalr1.cc" // -*- C++ -*-
@@ -10,7 +16,7 @@
 %defines
 
 // Put parser inside a namespace
-%define api.namespace {VSOP}
+%define api.namespace {VSOP} 
 
 // Give the name of the parser class
 %define api.parser.class {Parser}
@@ -34,7 +40,7 @@
 %code requires {
     #include <string>
     #include <vector>
-    #include <memory>
+    #include <array>
     #include "ast.hpp"
 
     namespace VSOP
@@ -48,393 +54,222 @@
 
 %code {
     #include "driver.hpp"
+
+    using namespace std;
 }
 
-// VSOP tokens definition
-%token <int>         INTEGER_LITERAL
-%token <std::string> STRING_LITERAL
-%token <std::string> TYPE_IDENTIFIER
-%token <std::string> OBJECT_IDENTIFIER
-// Operators
-%token LBRACE "{"
-%token RBRACE "}"
-%token LPAR "("
-%token RPAR ")"
-%token COLON ":"
-%token SEMICOLON ";"
-%token COMMA ","
-%token PLUS "+"
-%token MINUS "-"
-%token TIMES "*"
-%token DIV "/"
-%token POW "^"
-%token DOT "."
-%token EQUAL "="
-%token LOWER "<"
-%token LOWER_EQUAL "<="
-%token ASSIGN "<-"
-// Keywords
-%token AND "and"
-%token BOOL "bool"
-%token CLASS "class"
-%token DO "do"
-%token ELSE "else"
-%token EXTENDS "extends"
-%token FALSE "false"
-%token IF "if"
-%token IN "in"
-%token INT32 "int32"
-%token ISNULL "isnull"
-%token LET "let"
-%token NEW "new"
-%token NOT "not"
-%token SELF "self"
-%token STRING "string"
-%token THEN "then"
-%token TRUE "true"
-%token UNIT "unit"
-%token WHILE "while"
+// Token and symbols definitions
+%token
+    LBRACE      "{"
+    RBRACE      "}"
+    LPAR        "("
+    RPAR        ")"
+    COLON       ":"
+    SEMICOLON   ";"
+    COMMA       ","
+    PLUS        "+"
+    MINUS       "-"
+    TIMES       "*"
+    DIV         "/"
+    POW         "^"
+    DOT         "."
+    EQUAL       "="
+    LOWER       "<"
+    LOWER_EQUAL "<="
+    ASSIGN      "<-"
+    AND         "and"
+    BOOL        "bool"
+    CLASS       "class"
+    DO          "do"
+    ELSE        "else"
+    EXTENDS     "extends"
+    FALSE       "false"
+    IF          "if"
+    IN          "in"
+    INT32       "int32"
+    ISNULL      "isnull"
+    LET         "let"
+    NEW         "new"
+    NOT         "not"
+    SELF        "self"
+    STRING      "string"
+    THEN        "then"
+    TRUE        "true"
+    UNIT        "unit"
+    WHILE       "while"
+;
 
-// Define the types for non-terminals
-%type <VSOP::ProgramAst*> program
-%type <VSOP::ClassAst*> class
-%type <std::vector<VSOP::ClassAst*>> class_list
-%type <VSOP::FieldAst*> field
-%type <VSOP::MethodAst*> method
-%type <std::vector<VSOP::FieldAst*>> field_list
-%type <std::vector<VSOP::MethodAst*>> method_list
-%type <VSOP::FormalAst*> formal
-%type <std::vector<VSOP::FormalAst*>> formal_list formals
-%type <VSOP::ExprAst*> expr block
-%type <std::vector<VSOP::ExprAst*>> expr_list args
-%type <std::string> type
+%define parse.error verbose
 
-// Define operator precedence and associativity
+// For some symbols, need to store a value
+%token <std::string> 
+    TYPE_ID    "type-identifier"
+    OBJECT_ID  "object-identifier"
+    STRING_LIT "string-literal"
+    ERROR      "error"
+;
+
+%token <int> INTEGER_LIT        "integer-literal"
+
+
+%nterm program 
+%nterm <ClassAst*> class 
+%nterm <FieldAst*> field 
+%nterm <MethodAst*> method 
+%nterm <std::vector<FormalAst*>> formals 
+%nterm <FormalAst*> formal 
+%nterm <ExprAst*> expr if while let object-assign unop binop call new
+%nterm <ExprBlockAst*> block 
+%nterm <std::string> type 
+%nterm <ExprLiteralAst*> literal
+
+%nterm <std::vector<ClassAst*>> classes
+%nterm <ClassBody> class-body // array Ast-list[2] - fields and methods
+%nterm <std::vector<ExprAst*>> exprs args args-optional
+
+
+// Precedence
 %right ASSIGN
 %left AND
-%nonassoc EQUAL LOWER LOWER_EQUAL
-%left PLUS MINUS
-%left TIMES DIV
+%right NOT
+%nonassoc LOWER LOWER_EQUAL EQUAL
+%left "+" "-"; // Could also do: %left PLUS MINUS
+%left "*" "/";
+%right ISNULL
 %right POW
-%right UMINUS UNOT UISNULL
 %left DOT
 
 %%
-// Grammar rules for VSOP language
+// Grammar rules
 
-// Program is a list of classes
-program
-    : class_list
-        {
-            $$ = new ProgramAst();
-            $$->classes = $1;
-            driver.programAst.reset($$);
-        }
-    ;
+%start program;
 
-class_list
-    : class
-        {
-            $$ = std::vector<ClassAst*>();
-            $$.push_back($1);
-        }
-    | class_list class
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
-    ;
+program: // AST-list
+    classes { driver.programAst = std::make_unique<ProgramAst>(@1.begin.line, @1.begin.column, $1); }
+   
+classes:
+    class           { $$.push_back($1); }
+    | classes class { $1.push_back($2); $$ = $1; }
 
-// Class definition
-class
-    : "class" TYPE_IDENTIFIER "{" field_list method_list "}"
-        {
-            $$ = new ClassAst($2);
-            $$->fields = $4;
-            $$->methods = $5;
-        }
-    | "class" TYPE_IDENTIFIER "extends" TYPE_IDENTIFIER "{" field_list method_list "}"
-        {
-            $$ = new ClassAst($2, $4);
-            $$->fields = $6;
-            $$->methods = $7;
-        }
-    ;
+class: // AST-function
+    CLASS TYPE_ID LBRACE class-body RBRACE { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, "Object", $4.fields, $4.methods); };
+    | CLASS TYPE_ID EXTENDS TYPE_ID LBRACE class-body RBRACE { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, $4, $6.fields, $6.methods); };
 
-field_list
-    : /* empty */
-        {
-            $$ = std::vector<FieldAst*>();
-        }
-    | field_list field
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
-    ;
+class-body: // array[2] of AST-list
+    %empty              {}
+    | class-body field  { $1.fields.push_back($2); $$ = $1; }
+    | class-body method { $1.methods.push_back($2); $$ = $1; };
 
-method_list
-    : /* empty */
-        {
-            $$ = std::vector<MethodAst*>();
-        }
-    | method_list method
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
-    ;
+field: // AST-function
+    OBJECT_ID COLON type SEMICOLON { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3); };
+    | OBJECT_ID COLON type ASSIGN expr SEMICOLON { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3, $5); };
 
-// Field definition
-field
-    : OBJECT_IDENTIFIER ":" type ";"
-        {
-            $$ = new FieldAst($1, $3);
-        }
-    | OBJECT_IDENTIFIER ":" type "<-" expr ";"
-        {
-            $$ = new FieldAst($1, $3, $5);
-        }
-    ;
+method: // AST-function
+    OBJECT_ID LPAR formals RPAR COLON type block { $$ = new MethodAst(@1.begin.line, @1.begin.column, $1, $3, $6, $7); };
 
-// Method definition
-method
-    : OBJECT_IDENTIFIER "(" formals ")" ":" type block
-        {
-            $$ = new MethodAst($1, $6, $7);
-            $$->formals = $3;
-        }
-    ;
+type: // AST-data
+    INT32      { $$ = "int32"; }
+    | BOOL     { $$ = "bool"; }
+    | STRING   { $$ = "string"; }
+    | UNIT     { $$ = "unit"; }
+    | TYPE_ID  { $$ = $1; };
 
-// Formal parameters
-formals
-    : /* empty */
-        {
-            $$ = std::vector<FormalAst*>();
-        }
-    | formal_list
-        {
-            $$ = $1;
-        }
-    ;
+formals: // AST-list
+    %empty                 {}
+    | formal               { $$.push_back($1); }
+    | formals COMMA formal { $1.push_back($3); $$ = $1; };
 
-formal_list
-    : formal
-        {
-            $$ = std::vector<FormalAst*>();
-            $$.push_back($1);
-        }
-    | formal_list "," formal
-        {
-            $$ = $1;
-            $$.push_back($3);
-        }
-    ;
+formal: // AST-typed
+    OBJECT_ID COLON type { $$ = new FormalAst(@1.begin.line, @1.begin.column, $1, $3); };
 
-formal
-    : OBJECT_IDENTIFIER ":" type
-        {
-            $$ = new FormalAst($1, $3);
-        }
-    ;
+block: // AST-list
+    LBRACE exprs RBRACE { $$ = new ExprBlockAst(@1.begin.line, @1.begin.column, $2); };
 
-// Types
-type
-    : TYPE_IDENTIFIER
-        {
-            $$ = $1;
-        }
-    | "int32"
-        {
-            $$ = "int32";
-        }
-    | "bool"
-        {
-            $$ = "bool";
-        }
-    | "string"
-        {
-            $$ = "string";
-        }
-    | "unit"
-        {
-            $$ = "unit";
-        }
-    ;
+exprs:  // AST-list
+    expr                   { $$.push_back($1); }
+    | exprs SEMICOLON expr { $1.push_back($3); $$ = $1; };
 
-// Block of expressions
-block
-    : "{" expr_list "}"
-        {
-            BlockExprAst* block = new BlockExprAst();
-            block->expressions = $2;
-            $$ = block;
-        }
-    ;
+expr: // AST-optional
+    if                  
+    | while             
+    | let               
+    | object-assign     
+    | unop              
+    | binop             
+    | call              
+    | new               { $$ = $1; };
 
-expr_list
-    : expr
-        {
-            $$ = std::vector<ExprAst*>();
-            $$.push_back($1);
-        }
-    | expr_list ";" expr
-        {
-            $$ = $1;
-            $$.push_back($3);
-        }
-    ;
+expr:
+    SELF                { $$ = new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"); }
+    | OBJECT_ID         { $$ = new ExprObjectIdAst(@1.begin.line, @1.begin.column, $1); }
+    | literal           { $$ = $1; }
+    | LPAR RPAR         { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "()", "unit"); }
+    | LPAR expr RPAR    { $$ = $2; }
+    
+expr:
+    block             { $$ = $1; };
 
-// Expressions
-expr
-    : "if" expr "then" expr
-        {
-            $$ = new IfExprAst($2, $4);
-        }
-    | "if" expr "then" expr "else" expr
-        {
-            $$ = new IfExprAst($2, $4, $6);
-        }
-    | "while" expr "do" expr
-        {
-            $$ = new WhileExprAst($2, $4);
-        }
-    | "let" OBJECT_IDENTIFIER ":" type "in" expr
-        {
-            $$ = new LetExprAst($2, $4, nullptr, $6);
-        }
-    | "let" OBJECT_IDENTIFIER ":" type "<-" expr "in" expr
-        {
-            $$ = new LetExprAst($2, $4, $6, $8);
-        }
-    | OBJECT_IDENTIFIER "<-" expr
-        {
-            $$ = new AssignExprAst($1, $3);
-        }
-    | "not" expr %prec UNOT
-        {
-            $$ = new UnaryOpExprAst("not", $2);
-        }
-    | "-" expr %prec UMINUS
-        {
-            $$ = new UnaryOpExprAst("-", $2);
-        }
-    | "isnull" expr %prec UISNULL
-        {
-            $$ = new UnaryOpExprAst("isnull", $2);
-        }
-    | expr "=" expr
-        {
-            $$ = new BinaryOpExprAst("=", $1, $3);
-        }
-    | expr "<" expr
-        {
-            $$ = new BinaryOpExprAst("<", $1, $3);
-        }
-    | expr "<=" expr
-        {
-            $$ = new BinaryOpExprAst("<=", $1, $3);
-        }
-    | expr "+" expr
-        {
-            $$ = new BinaryOpExprAst("+", $1, $3);
-        }
-    | expr "-" expr
-        {
-            $$ = new BinaryOpExprAst("-", $1, $3);
-        }
-    | expr "*" expr
-        {
-            $$ = new BinaryOpExprAst("*", $1, $3);
-        }
-    | expr "/" expr
-        {
-            $$ = new BinaryOpExprAst("/", $1, $3);
-        }
-    | expr "^" expr
-        {
-            $$ = new BinaryOpExprAst("^", $1, $3);
-        }
-    | expr "and" expr
-        {
-            $$ = new BinaryOpExprAst("and", $1, $3);
-        }
-    | OBJECT_IDENTIFIER "(" args ")"
-        {
-            CallExprAst* call = new CallExprAst(new SelfExprAst(), $1);
-            call->arguments = $3;
-            $$ = call;
-        }
-    | expr "." OBJECT_IDENTIFIER "(" args ")"
-        {
-            CallExprAst* call = new CallExprAst($1, $3);
-            call->arguments = $5;
-            $$ = call;
-        }
-    | "new" TYPE_IDENTIFIER
-        {
-            $$ = new NewExprAst($2);
-        }
-    | OBJECT_IDENTIFIER
-        {
-            $$ = new ObjectIdExprAst($1);
-        }
-    | "self"
-        {
-            $$ = new SelfExprAst();
-        }
-    | INTEGER_LITERAL
-        {
-            $$ = new IntegerLiteralExprAst($1);
-        }
-    | STRING_LITERAL
-        {
-            $$ = new StringLiteralExprAst($1);
-        }
-    | "true"
-        {
-            $$ = new BooleanLiteralExprAst(true);
-        }
-    | "false"
-        {
-            $$ = new BooleanLiteralExprAst(false);
-        }
-    | "(" ")"
-        {
-            $$ = new UnitExprAst();
-        }
-    | "(" expr ")"
-        {
-            $$ = $2;
-        }
-    | block
-        {
-            $$ = $1;
-        }
-    ;
+args-optional: // AST-list
+    %empty {}
+    | args { $$ = $1; };
 
-// Method call arguments
-args
-    : /* empty */
-        {
-            $$ = std::vector<ExprAst*>();
-        }
-    | expr_list
-        {
-            $$ = $1;
-        }
-    ;
+args: // AST-list
+    expr              { $$.push_back($1); }
+    | args COMMA expr { $1.push_back($3); $$ = $1; };
+
+if: // AST-function
+    IF expr THEN expr { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4); };
+    | IF expr THEN expr ELSE expr { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4, $6); };
+
+while: // AST-function
+    WHILE expr DO expr { $$ = new ExprWhileAst(@1.begin.line, @1.begin.column, $2, $4); };
+
+let: // AST-function
+    LET OBJECT_ID COLON type IN expr { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6); };
+    | LET OBJECT_ID COLON type ASSIGN expr IN expr { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6, $8); };
+
+object-assign: // AST-function
+    OBJECT_ID ASSIGN expr { $$ = new ExprAssignAst(@1.begin.line, @1.begin.column, $1, $3); };
+
+unop: // AST-function
+    NOT expr      { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "not", $2); }
+    | MINUS expr  { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "-", $2); }
+    | ISNULL expr { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "isnull", $2); };
+
+binop: // AST-function
+    expr PLUS expr %prec PLUS                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "+", $1, $3); }
+    | expr EQUAL expr %prec EQUAL             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "=", $1, $3); }
+    | expr LOWER expr %prec LOWER             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<", $1, $3); }
+    | expr LOWER_EQUAL expr %prec LOWER_EQUAL { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<=", $1, $3); }
+    | expr MINUS expr %prec MINUS             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "-", $1, $3); }
+    | expr TIMES expr %prec TIMES             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "*", $1, $3); }
+    | expr DIV expr %prec DIV                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "/", $1, $3); }
+    | expr POW expr %prec POW                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "^", $1, $3); }
+    | expr AND expr %prec AND                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "and", $1, $3); };
+
+call: // AST-function
+    OBJECT_ID LPAR args-optional RPAR            { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"), $1, $3); } 
+    | expr DOT OBJECT_ID LPAR args-optional RPAR { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, $1, $3, $5); };
+
+new: // AST-function
+    NEW TYPE_ID { $$ = new ExprNewAst(@1.begin.line, @1.begin.column, $2); };
+
+literal: // AST-data
+    INTEGER_LIT  { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, std::to_string($1), "int32"); }
+    | STRING_LIT { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, $1, "string"); }
+    | TRUE       { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "true", "bool"); }
+    | FALSE      { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "false", "bool"); };
+
 
 %%
-
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
 {
     const position &pos = l.begin;
 
-    std::cerr   << *(pos.filename) << ":"
-                << pos.line << ":" 
-                << pos.column << ": "
-                << m
-                << std::endl;
+    cerr << *(pos.filename) << ":"
+         << pos.line << ":" 
+         << pos.column << ": "
+         << m
+         << endl;
 }

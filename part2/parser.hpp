@@ -45,11 +45,11 @@
 #ifndef YY_YY_PARSER_HPP_INCLUDED
 # define YY_YY_PARSER_HPP_INCLUDED
 // "%code requires" blocks.
-#line 34 "parser.y"
+#line 40 "parser.y"
 
     #include <string>
     #include <vector>
-    #include <memory>
+    #include <array>
     #include "ast.hpp"
 
     namespace VSOP
@@ -190,7 +190,7 @@
 # define YYDEBUG 0
 #endif
 
-#line 13 "parser.y"
+#line 19 "parser.y"
 namespace VSOP {
 #line 196 "parser.hpp"
 
@@ -407,49 +407,57 @@ namespace VSOP {
     union union_type
     {
       // class
-      char dummy1[sizeof (VSOP::ClassAst*)];
+      char dummy1[sizeof (ClassAst*)];
+
+      // class-body
+      char dummy2[sizeof (ClassBody)];
+
+      // expr
+      // if
+      // while
+      // let
+      // object-assign
+      // unop
+      // binop
+      // call
+      // new
+      char dummy3[sizeof (ExprAst*)];
 
       // block
-      // expr
-      char dummy2[sizeof (VSOP::ExprAst*)];
+      char dummy4[sizeof (ExprBlockAst*)];
+
+      // literal
+      char dummy5[sizeof (ExprLiteralAst*)];
 
       // field
-      char dummy3[sizeof (VSOP::FieldAst*)];
+      char dummy6[sizeof (FieldAst*)];
 
       // formal
-      char dummy4[sizeof (VSOP::FormalAst*)];
+      char dummy7[sizeof (FormalAst*)];
 
       // method
-      char dummy5[sizeof (VSOP::MethodAst*)];
+      char dummy8[sizeof (MethodAst*)];
 
-      // program
-      char dummy6[sizeof (VSOP::ProgramAst*)];
+      // "integer-literal"
+      char dummy9[sizeof (int)];
 
-      // INTEGER_LITERAL
-      char dummy7[sizeof (int)];
-
-      // STRING_LITERAL
-      // TYPE_IDENTIFIER
-      // OBJECT_IDENTIFIER
+      // "type-identifier"
+      // "object-identifier"
+      // "string-literal"
+      // "error"
       // type
-      char dummy8[sizeof (std::string)];
+      char dummy10[sizeof (std::string)];
 
-      // class_list
-      char dummy9[sizeof (std::vector<VSOP::ClassAst*>)];
+      // classes
+      char dummy11[sizeof (std::vector<ClassAst*>)];
 
-      // expr_list
+      // exprs
+      // args-optional
       // args
-      char dummy10[sizeof (std::vector<VSOP::ExprAst*>)];
-
-      // field_list
-      char dummy11[sizeof (std::vector<VSOP::FieldAst*>)];
+      char dummy12[sizeof (std::vector<ExprAst*>)];
 
       // formals
-      // formal_list
-      char dummy12[sizeof (std::vector<VSOP::FormalAst*>)];
-
-      // method_list
-      char dummy13[sizeof (std::vector<VSOP::MethodAst*>)];
+      char dummy13[sizeof (std::vector<FormalAst*>)];
     };
 
     /// The size of the largest semantic type.
@@ -501,50 +509,48 @@ namespace VSOP {
     YYEOF = 0,                     // "end of file"
     YYerror = 1,                   // error
     YYUNDEF = 2,                   // "invalid token"
-    INTEGER_LITERAL = 3,           // INTEGER_LITERAL
-    STRING_LITERAL = 4,            // STRING_LITERAL
-    TYPE_IDENTIFIER = 5,           // TYPE_IDENTIFIER
-    OBJECT_IDENTIFIER = 6,         // OBJECT_IDENTIFIER
-    LBRACE = 7,                    // "{"
-    RBRACE = 8,                    // "}"
-    LPAR = 9,                      // "("
-    RPAR = 10,                     // ")"
-    COLON = 11,                    // ":"
-    SEMICOLON = 12,                // ";"
-    COMMA = 13,                    // ","
-    PLUS = 14,                     // "+"
-    MINUS = 15,                    // "-"
-    TIMES = 16,                    // "*"
-    DIV = 17,                      // "/"
-    POW = 18,                      // "^"
-    DOT = 19,                      // "."
-    EQUAL = 20,                    // "="
-    LOWER = 21,                    // "<"
-    LOWER_EQUAL = 22,              // "<="
-    ASSIGN = 23,                   // "<-"
-    AND = 24,                      // "and"
-    BOOL = 25,                     // "bool"
-    CLASS = 26,                    // "class"
-    DO = 27,                       // "do"
-    ELSE = 28,                     // "else"
-    EXTENDS = 29,                  // "extends"
-    FALSE = 30,                    // "false"
-    IF = 31,                       // "if"
-    IN = 32,                       // "in"
-    INT32 = 33,                    // "int32"
-    ISNULL = 34,                   // "isnull"
-    LET = 35,                      // "let"
-    NEW = 36,                      // "new"
-    NOT = 37,                      // "not"
-    SELF = 38,                     // "self"
-    STRING = 39,                   // "string"
-    THEN = 40,                     // "then"
-    TRUE = 41,                     // "true"
-    UNIT = 42,                     // "unit"
-    WHILE = 43,                    // "while"
-    UMINUS = 44,                   // UMINUS
-    UNOT = 45,                     // UNOT
-    UISNULL = 46                   // UISNULL
+    LBRACE = 3,                    // "{"
+    RBRACE = 4,                    // "}"
+    LPAR = 5,                      // "("
+    RPAR = 6,                      // ")"
+    COLON = 7,                     // ":"
+    SEMICOLON = 8,                 // ";"
+    COMMA = 9,                     // ","
+    PLUS = 10,                     // "+"
+    MINUS = 11,                    // "-"
+    TIMES = 12,                    // "*"
+    DIV = 13,                      // "/"
+    POW = 14,                      // "^"
+    DOT = 15,                      // "."
+    EQUAL = 16,                    // "="
+    LOWER = 17,                    // "<"
+    LOWER_EQUAL = 18,              // "<="
+    ASSIGN = 19,                   // "<-"
+    AND = 20,                      // "and"
+    BOOL = 21,                     // "bool"
+    CLASS = 22,                    // "class"
+    DO = 23,                       // "do"
+    ELSE = 24,                     // "else"
+    EXTENDS = 25,                  // "extends"
+    FALSE = 26,                    // "false"
+    IF = 27,                       // "if"
+    IN = 28,                       // "in"
+    INT32 = 29,                    // "int32"
+    ISNULL = 30,                   // "isnull"
+    LET = 31,                      // "let"
+    NEW = 32,                      // "new"
+    NOT = 33,                      // "not"
+    SELF = 34,                     // "self"
+    STRING = 35,                   // "string"
+    THEN = 36,                     // "then"
+    TRUE = 37,                     // "true"
+    UNIT = 38,                     // "unit"
+    WHILE = 39,                    // "while"
+    TYPE_ID = 40,                  // "type-identifier"
+    OBJECT_ID = 41,                // "object-identifier"
+    STRING_LIT = 42,               // "string-literal"
+    ERROR = 43,                    // "error"
+    INTEGER_LIT = 44               // "integer-literal"
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -561,71 +567,77 @@ namespace VSOP {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 47, ///< Number of tokens.
+        YYNTOKENS = 45, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end of file"
         S_YYerror = 1,                           // error
         S_YYUNDEF = 2,                           // "invalid token"
-        S_INTEGER_LITERAL = 3,                   // INTEGER_LITERAL
-        S_STRING_LITERAL = 4,                    // STRING_LITERAL
-        S_TYPE_IDENTIFIER = 5,                   // TYPE_IDENTIFIER
-        S_OBJECT_IDENTIFIER = 6,                 // OBJECT_IDENTIFIER
-        S_LBRACE = 7,                            // "{"
-        S_RBRACE = 8,                            // "}"
-        S_LPAR = 9,                              // "("
-        S_RPAR = 10,                             // ")"
-        S_COLON = 11,                            // ":"
-        S_SEMICOLON = 12,                        // ";"
-        S_COMMA = 13,                            // ","
-        S_PLUS = 14,                             // "+"
-        S_MINUS = 15,                            // "-"
-        S_TIMES = 16,                            // "*"
-        S_DIV = 17,                              // "/"
-        S_POW = 18,                              // "^"
-        S_DOT = 19,                              // "."
-        S_EQUAL = 20,                            // "="
-        S_LOWER = 21,                            // "<"
-        S_LOWER_EQUAL = 22,                      // "<="
-        S_ASSIGN = 23,                           // "<-"
-        S_AND = 24,                              // "and"
-        S_BOOL = 25,                             // "bool"
-        S_CLASS = 26,                            // "class"
-        S_DO = 27,                               // "do"
-        S_ELSE = 28,                             // "else"
-        S_EXTENDS = 29,                          // "extends"
-        S_FALSE = 30,                            // "false"
-        S_IF = 31,                               // "if"
-        S_IN = 32,                               // "in"
-        S_INT32 = 33,                            // "int32"
-        S_ISNULL = 34,                           // "isnull"
-        S_LET = 35,                              // "let"
-        S_NEW = 36,                              // "new"
-        S_NOT = 37,                              // "not"
-        S_SELF = 38,                             // "self"
-        S_STRING = 39,                           // "string"
-        S_THEN = 40,                             // "then"
-        S_TRUE = 41,                             // "true"
-        S_UNIT = 42,                             // "unit"
-        S_WHILE = 43,                            // "while"
-        S_UMINUS = 44,                           // UMINUS
-        S_UNOT = 45,                             // UNOT
-        S_UISNULL = 46,                          // UISNULL
-        S_YYACCEPT = 47,                         // $accept
-        S_program = 48,                          // program
-        S_class_list = 49,                       // class_list
-        S_class = 50,                            // class
-        S_field_list = 51,                       // field_list
-        S_method_list = 52,                      // method_list
-        S_field = 53,                            // field
-        S_method = 54,                           // method
-        S_formals = 55,                          // formals
-        S_formal_list = 56,                      // formal_list
-        S_formal = 57,                           // formal
-        S_type = 58,                             // type
-        S_block = 59,                            // block
-        S_expr_list = 60,                        // expr_list
-        S_expr = 61,                             // expr
-        S_args = 62                              // args
+        S_LBRACE = 3,                            // "{"
+        S_RBRACE = 4,                            // "}"
+        S_LPAR = 5,                              // "("
+        S_RPAR = 6,                              // ")"
+        S_COLON = 7,                             // ":"
+        S_SEMICOLON = 8,                         // ";"
+        S_COMMA = 9,                             // ","
+        S_PLUS = 10,                             // "+"
+        S_MINUS = 11,                            // "-"
+        S_TIMES = 12,                            // "*"
+        S_DIV = 13,                              // "/"
+        S_POW = 14,                              // "^"
+        S_DOT = 15,                              // "."
+        S_EQUAL = 16,                            // "="
+        S_LOWER = 17,                            // "<"
+        S_LOWER_EQUAL = 18,                      // "<="
+        S_ASSIGN = 19,                           // "<-"
+        S_AND = 20,                              // "and"
+        S_BOOL = 21,                             // "bool"
+        S_CLASS = 22,                            // "class"
+        S_DO = 23,                               // "do"
+        S_ELSE = 24,                             // "else"
+        S_EXTENDS = 25,                          // "extends"
+        S_FALSE = 26,                            // "false"
+        S_IF = 27,                               // "if"
+        S_IN = 28,                               // "in"
+        S_INT32 = 29,                            // "int32"
+        S_ISNULL = 30,                           // "isnull"
+        S_LET = 31,                              // "let"
+        S_NEW = 32,                              // "new"
+        S_NOT = 33,                              // "not"
+        S_SELF = 34,                             // "self"
+        S_STRING = 35,                           // "string"
+        S_THEN = 36,                             // "then"
+        S_TRUE = 37,                             // "true"
+        S_UNIT = 38,                             // "unit"
+        S_WHILE = 39,                            // "while"
+        S_TYPE_ID = 40,                          // "type-identifier"
+        S_OBJECT_ID = 41,                        // "object-identifier"
+        S_STRING_LIT = 42,                       // "string-literal"
+        S_ERROR = 43,                            // "error"
+        S_INTEGER_LIT = 44,                      // "integer-literal"
+        S_YYACCEPT = 45,                         // $accept
+        S_program = 46,                          // program
+        S_classes = 47,                          // classes
+        S_class = 48,                            // class
+        S_49_class_body = 49,                    // class-body
+        S_field = 50,                            // field
+        S_method = 51,                           // method
+        S_type = 52,                             // type
+        S_formals = 53,                          // formals
+        S_formal = 54,                           // formal
+        S_block = 55,                            // block
+        S_exprs = 56,                            // exprs
+        S_expr = 57,                             // expr
+        S_58_args_optional = 58,                 // args-optional
+        S_args = 59,                             // args
+        S_if = 60,                               // if
+        S_while = 61,                            // while
+        S_let = 62,                              // let
+        S_63_object_assign = 63,                 // object-assign
+        S_unop = 64,                             // unop
+        S_binop = 65,                            // binop
+        S_call = 66,                             // call
+        S_new = 67,                              // new
+        S_literal = 68                           // literal
       };
     };
 
@@ -663,61 +675,69 @@ namespace VSOP {
         switch (this->kind ())
     {
       case symbol_kind::S_class: // class
-        value.move< VSOP::ClassAst* > (std::move (that.value));
+        value.move< ClassAst* > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_49_class_body: // class-body
+        value.move< ClassBody > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_expr: // expr
+      case symbol_kind::S_if: // if
+      case symbol_kind::S_while: // while
+      case symbol_kind::S_let: // let
+      case symbol_kind::S_63_object_assign: // object-assign
+      case symbol_kind::S_unop: // unop
+      case symbol_kind::S_binop: // binop
+      case symbol_kind::S_call: // call
+      case symbol_kind::S_new: // new
+        value.move< ExprAst* > (std::move (that.value));
         break;
 
       case symbol_kind::S_block: // block
-      case symbol_kind::S_expr: // expr
-        value.move< VSOP::ExprAst* > (std::move (that.value));
+        value.move< ExprBlockAst* > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_literal: // literal
+        value.move< ExprLiteralAst* > (std::move (that.value));
         break;
 
       case symbol_kind::S_field: // field
-        value.move< VSOP::FieldAst* > (std::move (that.value));
+        value.move< FieldAst* > (std::move (that.value));
         break;
 
       case symbol_kind::S_formal: // formal
-        value.move< VSOP::FormalAst* > (std::move (that.value));
+        value.move< FormalAst* > (std::move (that.value));
         break;
 
       case symbol_kind::S_method: // method
-        value.move< VSOP::MethodAst* > (std::move (that.value));
+        value.move< MethodAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_program: // program
-        value.move< VSOP::ProgramAst* > (std::move (that.value));
-        break;
-
-      case symbol_kind::S_INTEGER_LITERAL: // INTEGER_LITERAL
+      case symbol_kind::S_INTEGER_LIT: // "integer-literal"
         value.move< int > (std::move (that.value));
         break;
 
-      case symbol_kind::S_STRING_LITERAL: // STRING_LITERAL
-      case symbol_kind::S_TYPE_IDENTIFIER: // TYPE_IDENTIFIER
-      case symbol_kind::S_OBJECT_IDENTIFIER: // OBJECT_IDENTIFIER
+      case symbol_kind::S_TYPE_ID: // "type-identifier"
+      case symbol_kind::S_OBJECT_ID: // "object-identifier"
+      case symbol_kind::S_STRING_LIT: // "string-literal"
+      case symbol_kind::S_ERROR: // "error"
       case symbol_kind::S_type: // type
         value.move< std::string > (std::move (that.value));
         break;
 
-      case symbol_kind::S_class_list: // class_list
-        value.move< std::vector<VSOP::ClassAst*> > (std::move (that.value));
+      case symbol_kind::S_classes: // classes
+        value.move< std::vector<ClassAst*> > (std::move (that.value));
         break;
 
-      case symbol_kind::S_expr_list: // expr_list
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_58_args_optional: // args-optional
       case symbol_kind::S_args: // args
-        value.move< std::vector<VSOP::ExprAst*> > (std::move (that.value));
-        break;
-
-      case symbol_kind::S_field_list: // field_list
-        value.move< std::vector<VSOP::FieldAst*> > (std::move (that.value));
+        value.move< std::vector<ExprAst*> > (std::move (that.value));
         break;
 
       case symbol_kind::S_formals: // formals
-      case symbol_kind::S_formal_list: // formal_list
-        value.move< std::vector<VSOP::FormalAst*> > (std::move (that.value));
-        break;
-
-      case symbol_kind::S_method_list: // method_list
-        value.move< std::vector<VSOP::MethodAst*> > (std::move (that.value));
+        value.move< std::vector<FormalAst*> > (std::move (that.value));
         break;
 
       default:
@@ -744,13 +764,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, VSOP::ClassAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ClassAst*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const VSOP::ClassAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ClassAst*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -758,13 +778,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, VSOP::ExprAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ClassBody&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const VSOP::ExprAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ClassBody& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -772,13 +792,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, VSOP::FieldAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ExprAst*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const VSOP::FieldAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ExprAst*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -786,13 +806,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, VSOP::FormalAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ExprBlockAst*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const VSOP::FormalAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ExprBlockAst*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -800,13 +820,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, VSOP::MethodAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ExprLiteralAst*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const VSOP::MethodAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ExprLiteralAst*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -814,13 +834,41 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, VSOP::ProgramAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, FieldAst*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const VSOP::ProgramAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const FieldAst*& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, FormalAst*&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const FormalAst*& v, const location_type& l)
+        : Base (t)
+        , value (v)
+        , location (l)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, MethodAst*&& v, location_type&& l)
+        : Base (t)
+        , value (std::move (v))
+        , location (std::move (l))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const MethodAst*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -856,13 +904,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<VSOP::ClassAst*>&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, std::vector<ClassAst*>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const std::vector<VSOP::ClassAst*>& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const std::vector<ClassAst*>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -870,13 +918,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<VSOP::ExprAst*>&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, std::vector<ExprAst*>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const std::vector<VSOP::ExprAst*>& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const std::vector<ExprAst*>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -884,41 +932,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<VSOP::FieldAst*>&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, std::vector<FormalAst*>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const std::vector<VSOP::FieldAst*>& v, const location_type& l)
-        : Base (t)
-        , value (v)
-        , location (l)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<VSOP::FormalAst*>&& v, location_type&& l)
-        : Base (t)
-        , value (std::move (v))
-        , location (std::move (l))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const std::vector<VSOP::FormalAst*>& v, const location_type& l)
-        : Base (t)
-        , value (v)
-        , location (l)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<VSOP::MethodAst*>&& v, location_type&& l)
-        : Base (t)
-        , value (std::move (v))
-        , location (std::move (l))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const std::vector<VSOP::MethodAst*>& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const std::vector<FormalAst*>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -948,61 +968,69 @@ namespace VSOP {
 switch (yykind)
     {
       case symbol_kind::S_class: // class
-        value.template destroy< VSOP::ClassAst* > ();
+        value.template destroy< ClassAst* > ();
+        break;
+
+      case symbol_kind::S_49_class_body: // class-body
+        value.template destroy< ClassBody > ();
+        break;
+
+      case symbol_kind::S_expr: // expr
+      case symbol_kind::S_if: // if
+      case symbol_kind::S_while: // while
+      case symbol_kind::S_let: // let
+      case symbol_kind::S_63_object_assign: // object-assign
+      case symbol_kind::S_unop: // unop
+      case symbol_kind::S_binop: // binop
+      case symbol_kind::S_call: // call
+      case symbol_kind::S_new: // new
+        value.template destroy< ExprAst* > ();
         break;
 
       case symbol_kind::S_block: // block
-      case symbol_kind::S_expr: // expr
-        value.template destroy< VSOP::ExprAst* > ();
+        value.template destroy< ExprBlockAst* > ();
+        break;
+
+      case symbol_kind::S_literal: // literal
+        value.template destroy< ExprLiteralAst* > ();
         break;
 
       case symbol_kind::S_field: // field
-        value.template destroy< VSOP::FieldAst* > ();
+        value.template destroy< FieldAst* > ();
         break;
 
       case symbol_kind::S_formal: // formal
-        value.template destroy< VSOP::FormalAst* > ();
+        value.template destroy< FormalAst* > ();
         break;
 
       case symbol_kind::S_method: // method
-        value.template destroy< VSOP::MethodAst* > ();
+        value.template destroy< MethodAst* > ();
         break;
 
-      case symbol_kind::S_program: // program
-        value.template destroy< VSOP::ProgramAst* > ();
-        break;
-
-      case symbol_kind::S_INTEGER_LITERAL: // INTEGER_LITERAL
+      case symbol_kind::S_INTEGER_LIT: // "integer-literal"
         value.template destroy< int > ();
         break;
 
-      case symbol_kind::S_STRING_LITERAL: // STRING_LITERAL
-      case symbol_kind::S_TYPE_IDENTIFIER: // TYPE_IDENTIFIER
-      case symbol_kind::S_OBJECT_IDENTIFIER: // OBJECT_IDENTIFIER
+      case symbol_kind::S_TYPE_ID: // "type-identifier"
+      case symbol_kind::S_OBJECT_ID: // "object-identifier"
+      case symbol_kind::S_STRING_LIT: // "string-literal"
+      case symbol_kind::S_ERROR: // "error"
       case symbol_kind::S_type: // type
         value.template destroy< std::string > ();
         break;
 
-      case symbol_kind::S_class_list: // class_list
-        value.template destroy< std::vector<VSOP::ClassAst*> > ();
+      case symbol_kind::S_classes: // classes
+        value.template destroy< std::vector<ClassAst*> > ();
         break;
 
-      case symbol_kind::S_expr_list: // expr_list
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_58_args_optional: // args-optional
       case symbol_kind::S_args: // args
-        value.template destroy< std::vector<VSOP::ExprAst*> > ();
-        break;
-
-      case symbol_kind::S_field_list: // field_list
-        value.template destroy< std::vector<VSOP::FieldAst*> > ();
+        value.template destroy< std::vector<ExprAst*> > ();
         break;
 
       case symbol_kind::S_formals: // formals
-      case symbol_kind::S_formal_list: // formal_list
-        value.template destroy< std::vector<VSOP::FormalAst*> > ();
-        break;
-
-      case symbol_kind::S_method_list: // method_list
-        value.template destroy< std::vector<VSOP::MethodAst*> > ();
+        value.template destroy< std::vector<FormalAst*> > ();
         break;
 
       default:
@@ -1012,14 +1040,11 @@ switch (yykind)
         Base::clear ();
       }
 
-#if YYDEBUG || 0
       /// The user-facing name of this symbol.
-      const char *name () const YY_NOEXCEPT
+      std::string name () const YY_NOEXCEPT
       {
         return Parser::symbol_name (this->kind ());
       }
-#endif // #if YYDEBUG || 0
-
 
       /// Backward compatibility (Bison 3.6).
       symbol_kind_type type_get () const YY_NOEXCEPT;
@@ -1103,8 +1128,7 @@ switch (yykind)
 #endif
       {
         YY_ASSERT (tok == token::YYEOF
-                   || (token::YYerror <= tok && tok <= token::YYUNDEF)
-                   || (token::LBRACE <= tok && tok <= token::UISNULL));
+                   || (token::YYerror <= tok && tok <= token::WHILE));
       }
 #if 201103L <= YY_CPLUSPLUS
       symbol_type (int tok, int v, location_type l)
@@ -1114,7 +1138,7 @@ switch (yykind)
         : super_type(token_type (tok), v, l)
 #endif
       {
-        YY_ASSERT (tok == token::INTEGER_LITERAL);
+        YY_ASSERT (tok == token::INTEGER_LIT);
       }
 #if 201103L <= YY_CPLUSPLUS
       symbol_type (int tok, std::string v, location_type l)
@@ -1124,7 +1148,7 @@ switch (yykind)
         : super_type(token_type (tok), v, l)
 #endif
       {
-        YY_ASSERT ((token::STRING_LITERAL <= tok && tok <= token::OBJECT_IDENTIFIER));
+        YY_ASSERT ((token::TYPE_ID <= tok && tok <= token::ERROR));
       }
     };
 
@@ -1169,12 +1193,9 @@ switch (yykind)
     /// Report a syntax error.
     void error (const syntax_error& err);
 
-#if YYDEBUG || 0
     /// The user-facing name of the symbol whose (internal) number is
     /// YYSYMBOL.  No bounds checking.
-    static const char *symbol_name (symbol_kind_type yysymbol);
-#endif // #if YYDEBUG || 0
-
+    static std::string symbol_name (symbol_kind_type yysymbol);
 
     // Implementation of make_symbol for each symbol type.
 #if 201103L <= YY_CPLUSPLUS
@@ -1220,66 +1241,6 @@ switch (yykind)
       make_YYUNDEF (const location_type& l)
       {
         return symbol_type (token::YYUNDEF, l);
-      }
-#endif
-#if 201103L <= YY_CPLUSPLUS
-      static
-      symbol_type
-      make_INTEGER_LITERAL (int v, location_type l)
-      {
-        return symbol_type (token::INTEGER_LITERAL, std::move (v), std::move (l));
-      }
-#else
-      static
-      symbol_type
-      make_INTEGER_LITERAL (const int& v, const location_type& l)
-      {
-        return symbol_type (token::INTEGER_LITERAL, v, l);
-      }
-#endif
-#if 201103L <= YY_CPLUSPLUS
-      static
-      symbol_type
-      make_STRING_LITERAL (std::string v, location_type l)
-      {
-        return symbol_type (token::STRING_LITERAL, std::move (v), std::move (l));
-      }
-#else
-      static
-      symbol_type
-      make_STRING_LITERAL (const std::string& v, const location_type& l)
-      {
-        return symbol_type (token::STRING_LITERAL, v, l);
-      }
-#endif
-#if 201103L <= YY_CPLUSPLUS
-      static
-      symbol_type
-      make_TYPE_IDENTIFIER (std::string v, location_type l)
-      {
-        return symbol_type (token::TYPE_IDENTIFIER, std::move (v), std::move (l));
-      }
-#else
-      static
-      symbol_type
-      make_TYPE_IDENTIFIER (const std::string& v, const location_type& l)
-      {
-        return symbol_type (token::TYPE_IDENTIFIER, v, l);
-      }
-#endif
-#if 201103L <= YY_CPLUSPLUS
-      static
-      symbol_type
-      make_OBJECT_IDENTIFIER (std::string v, location_type l)
-      {
-        return symbol_type (token::OBJECT_IDENTIFIER, std::move (v), std::move (l));
-      }
-#else
-      static
-      symbol_type
-      make_OBJECT_IDENTIFIER (const std::string& v, const location_type& l)
-      {
-        return symbol_type (token::OBJECT_IDENTIFIER, v, l);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
@@ -1840,49 +1801,97 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
-      make_UMINUS (location_type l)
+      make_TYPE_ID (std::string v, location_type l)
       {
-        return symbol_type (token::UMINUS, std::move (l));
+        return symbol_type (token::TYPE_ID, std::move (v), std::move (l));
       }
 #else
       static
       symbol_type
-      make_UMINUS (const location_type& l)
+      make_TYPE_ID (const std::string& v, const location_type& l)
       {
-        return symbol_type (token::UMINUS, l);
+        return symbol_type (token::TYPE_ID, v, l);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
-      make_UNOT (location_type l)
+      make_OBJECT_ID (std::string v, location_type l)
       {
-        return symbol_type (token::UNOT, std::move (l));
+        return symbol_type (token::OBJECT_ID, std::move (v), std::move (l));
       }
 #else
       static
       symbol_type
-      make_UNOT (const location_type& l)
+      make_OBJECT_ID (const std::string& v, const location_type& l)
       {
-        return symbol_type (token::UNOT, l);
+        return symbol_type (token::OBJECT_ID, v, l);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
-      make_UISNULL (location_type l)
+      make_STRING_LIT (std::string v, location_type l)
       {
-        return symbol_type (token::UISNULL, std::move (l));
+        return symbol_type (token::STRING_LIT, std::move (v), std::move (l));
       }
 #else
       static
       symbol_type
-      make_UISNULL (const location_type& l)
+      make_STRING_LIT (const std::string& v, const location_type& l)
       {
-        return symbol_type (token::UISNULL, l);
+        return symbol_type (token::STRING_LIT, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ERROR (std::string v, location_type l)
+      {
+        return symbol_type (token::ERROR, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_ERROR (const std::string& v, const location_type& l)
+      {
+        return symbol_type (token::ERROR, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_INTEGER_LIT (int v, location_type l)
+      {
+        return symbol_type (token::INTEGER_LIT, std::move (v), std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_INTEGER_LIT (const int& v, const location_type& l)
+      {
+        return symbol_type (token::INTEGER_LIT, v, l);
       }
 #endif
 
+
+    class context
+    {
+    public:
+      context (const Parser& yyparser, const symbol_type& yyla);
+      const symbol_type& lookahead () const YY_NOEXCEPT { return yyla_; }
+      symbol_kind_type token () const YY_NOEXCEPT { return yyla_.kind (); }
+      const location_type& location () const YY_NOEXCEPT { return yyla_.location; }
+
+      /// Put in YYARG at most YYARGN of the expected tokens, and return the
+      /// number of tokens stored in YYARG.  If YYARG is null, return the
+      /// number of expected tokens (guaranteed to be less than YYNTOKENS).
+      int expected_tokens (symbol_kind_type yyarg[], int yyargn) const;
+
+    private:
+      const Parser& yyparser_;
+      const symbol_type& yyla_;
+    };
 
   private:
 #if YY_CPLUSPLUS < 201103L
@@ -1896,6 +1905,13 @@ switch (yykind)
     /// Stored state numbers (used for stacks).
     typedef signed char state_type;
 
+    /// The arguments of the error message.
+    int yy_syntax_error_arguments_ (const context& yyctx,
+                                    symbol_kind_type yyarg[], int yyargn) const;
+
+    /// Generate an error message.
+    /// \param yyctx     the context in which the error occurred.
+    virtual std::string yysyntax_error_ (const context& yyctx) const;
     /// Compute post-reduction state.
     /// \param yystate   the current state
     /// \param yysym     the nonterminal to push on the stack
@@ -1917,10 +1933,11 @@ switch (yykind)
     /// are valid, yet not members of the token_type enum.
     static symbol_kind_type yytranslate_ (int t);
 
-#if YYDEBUG || 0
+    /// Convert the symbol name \a n to a form suitable for a diagnostic.
+    static std::string yytnamerr_ (const char *yystr);
+
     /// For a symbol, its name in clear.
     static const char* const yytname_[];
-#endif // #if YYDEBUG || 0
 
 
     // Tables.
@@ -2186,8 +2203,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 242,     ///< Last index in yytable_.
-      yynnts_ = 16,  ///< Number of nonterminal symbols.
+      yylast_ = 230,     ///< Last index in yytable_.
+      yynnts_ = 24,  ///< Number of nonterminal symbols.
       yyfinal_ = 6 ///< Termination state number.
     };
 
@@ -2214,61 +2231,69 @@ switch (yykind)
     switch (this->kind ())
     {
       case symbol_kind::S_class: // class
-        value.copy< VSOP::ClassAst* > (YY_MOVE (that.value));
+        value.copy< ClassAst* > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_49_class_body: // class-body
+        value.copy< ClassBody > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_expr: // expr
+      case symbol_kind::S_if: // if
+      case symbol_kind::S_while: // while
+      case symbol_kind::S_let: // let
+      case symbol_kind::S_63_object_assign: // object-assign
+      case symbol_kind::S_unop: // unop
+      case symbol_kind::S_binop: // binop
+      case symbol_kind::S_call: // call
+      case symbol_kind::S_new: // new
+        value.copy< ExprAst* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_block: // block
-      case symbol_kind::S_expr: // expr
-        value.copy< VSOP::ExprAst* > (YY_MOVE (that.value));
+        value.copy< ExprBlockAst* > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_literal: // literal
+        value.copy< ExprLiteralAst* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_field: // field
-        value.copy< VSOP::FieldAst* > (YY_MOVE (that.value));
+        value.copy< FieldAst* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_formal: // formal
-        value.copy< VSOP::FormalAst* > (YY_MOVE (that.value));
+        value.copy< FormalAst* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_method: // method
-        value.copy< VSOP::MethodAst* > (YY_MOVE (that.value));
+        value.copy< MethodAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_program: // program
-        value.copy< VSOP::ProgramAst* > (YY_MOVE (that.value));
-        break;
-
-      case symbol_kind::S_INTEGER_LITERAL: // INTEGER_LITERAL
+      case symbol_kind::S_INTEGER_LIT: // "integer-literal"
         value.copy< int > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_STRING_LITERAL: // STRING_LITERAL
-      case symbol_kind::S_TYPE_IDENTIFIER: // TYPE_IDENTIFIER
-      case symbol_kind::S_OBJECT_IDENTIFIER: // OBJECT_IDENTIFIER
+      case symbol_kind::S_TYPE_ID: // "type-identifier"
+      case symbol_kind::S_OBJECT_ID: // "object-identifier"
+      case symbol_kind::S_STRING_LIT: // "string-literal"
+      case symbol_kind::S_ERROR: // "error"
       case symbol_kind::S_type: // type
         value.copy< std::string > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_class_list: // class_list
-        value.copy< std::vector<VSOP::ClassAst*> > (YY_MOVE (that.value));
+      case symbol_kind::S_classes: // classes
+        value.copy< std::vector<ClassAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_expr_list: // expr_list
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_58_args_optional: // args-optional
       case symbol_kind::S_args: // args
-        value.copy< std::vector<VSOP::ExprAst*> > (YY_MOVE (that.value));
-        break;
-
-      case symbol_kind::S_field_list: // field_list
-        value.copy< std::vector<VSOP::FieldAst*> > (YY_MOVE (that.value));
+        value.copy< std::vector<ExprAst*> > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_formals: // formals
-      case symbol_kind::S_formal_list: // formal_list
-        value.copy< std::vector<VSOP::FormalAst*> > (YY_MOVE (that.value));
-        break;
-
-      case symbol_kind::S_method_list: // method_list
-        value.copy< std::vector<VSOP::MethodAst*> > (YY_MOVE (that.value));
+        value.copy< std::vector<FormalAst*> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -2301,61 +2326,69 @@ switch (yykind)
     switch (this->kind ())
     {
       case symbol_kind::S_class: // class
-        value.move< VSOP::ClassAst* > (YY_MOVE (s.value));
+        value.move< ClassAst* > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_49_class_body: // class-body
+        value.move< ClassBody > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_expr: // expr
+      case symbol_kind::S_if: // if
+      case symbol_kind::S_while: // while
+      case symbol_kind::S_let: // let
+      case symbol_kind::S_63_object_assign: // object-assign
+      case symbol_kind::S_unop: // unop
+      case symbol_kind::S_binop: // binop
+      case symbol_kind::S_call: // call
+      case symbol_kind::S_new: // new
+        value.move< ExprAst* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_block: // block
-      case symbol_kind::S_expr: // expr
-        value.move< VSOP::ExprAst* > (YY_MOVE (s.value));
+        value.move< ExprBlockAst* > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_literal: // literal
+        value.move< ExprLiteralAst* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_field: // field
-        value.move< VSOP::FieldAst* > (YY_MOVE (s.value));
+        value.move< FieldAst* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_formal: // formal
-        value.move< VSOP::FormalAst* > (YY_MOVE (s.value));
+        value.move< FormalAst* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_method: // method
-        value.move< VSOP::MethodAst* > (YY_MOVE (s.value));
+        value.move< MethodAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_program: // program
-        value.move< VSOP::ProgramAst* > (YY_MOVE (s.value));
-        break;
-
-      case symbol_kind::S_INTEGER_LITERAL: // INTEGER_LITERAL
+      case symbol_kind::S_INTEGER_LIT: // "integer-literal"
         value.move< int > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_STRING_LITERAL: // STRING_LITERAL
-      case symbol_kind::S_TYPE_IDENTIFIER: // TYPE_IDENTIFIER
-      case symbol_kind::S_OBJECT_IDENTIFIER: // OBJECT_IDENTIFIER
+      case symbol_kind::S_TYPE_ID: // "type-identifier"
+      case symbol_kind::S_OBJECT_ID: // "object-identifier"
+      case symbol_kind::S_STRING_LIT: // "string-literal"
+      case symbol_kind::S_ERROR: // "error"
       case symbol_kind::S_type: // type
         value.move< std::string > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_class_list: // class_list
-        value.move< std::vector<VSOP::ClassAst*> > (YY_MOVE (s.value));
+      case symbol_kind::S_classes: // classes
+        value.move< std::vector<ClassAst*> > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_expr_list: // expr_list
+      case symbol_kind::S_exprs: // exprs
+      case symbol_kind::S_58_args_optional: // args-optional
       case symbol_kind::S_args: // args
-        value.move< std::vector<VSOP::ExprAst*> > (YY_MOVE (s.value));
-        break;
-
-      case symbol_kind::S_field_list: // field_list
-        value.move< std::vector<VSOP::FieldAst*> > (YY_MOVE (s.value));
+        value.move< std::vector<ExprAst*> > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_formals: // formals
-      case symbol_kind::S_formal_list: // formal_list
-        value.move< std::vector<VSOP::FormalAst*> > (YY_MOVE (s.value));
-        break;
-
-      case symbol_kind::S_method_list: // method_list
-        value.move< std::vector<VSOP::MethodAst*> > (YY_MOVE (s.value));
+        value.move< std::vector<FormalAst*> > (YY_MOVE (s.value));
         break;
 
       default:
@@ -2419,9 +2452,9 @@ switch (yykind)
     return this->kind ();
   }
 
-#line 13 "parser.y"
+#line 19 "parser.y"
 } // VSOP
-#line 2425 "parser.hpp"
+#line 2458 "parser.hpp"
 
 
 
