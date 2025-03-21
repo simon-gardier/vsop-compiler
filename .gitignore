@@ -1,4 +1,11 @@
+lexer.cpp
+location.hh
+parser.cpp
+parser.hpp
+vsopc
+
 ##### Windows
+
 # Windows thumbnail cache files
 Thumbs.db
 Thumbs.db:encryptable
