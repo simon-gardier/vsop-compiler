@@ -34,27 +34,6 @@ namespace VSOP
         return "[" + enumerateElements(strings) + "]";
     }
 
-    /**
-     * @brief Escape a string according to VSOP rules
-     * 
-     * @param str String to escape
-     * @return std::string Escaped string
-     */
-    static std::string escapeString(const std::string& str)
-    {
-        std::stringstream ss;
-        ss << "\"";
-        for (char c : str) {
-            if (c == '\"' || c == '\\' || !isprint(c)) {
-                ss << "\\x" << std::setfill('0') << std::setw(2) << std::hex << (int)(unsigned char)c;
-            } else {
-                ss << c;
-            }
-        }
-        ss << "\"";
-        return ss.str();
-    }
-
     // Main AST class destructors
     ProgramAst::~ProgramAst() {
         for (auto cls : classes) {
@@ -283,7 +262,7 @@ namespace VSOP
 
     std::string StringLiteralExprAst::getString() const
     {
-        return escapeString(value);
+        return "\"" + value + "\"";
     }
 
     std::string BooleanLiteralExprAst::getString() const
