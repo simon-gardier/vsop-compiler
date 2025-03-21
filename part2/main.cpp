@@ -6,10 +6,7 @@
 #include <string>
 
 #include "driver.hpp"
-<<<<<<< HEAD
-=======
 #include "ast.hpp"
->>>>>>> 265dc7aca9663ec3fa4c1266246dab903fefa965
 
 using namespace std;
 
