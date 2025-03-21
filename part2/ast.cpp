@@ -3,293 +3,280 @@
 
 #include "ast.hpp"
 
-std::string globalSourceFile;
+static std::string currentSourceFile;
 
-static std::string enumerate_strings(const std::vector<std::string>& strings){
-    std::string s;
-    for(unsigned long i = 0 ; i < strings.size() ; i++)
-        s += strings[i] + (i == strings.size()-1 ? "" : ", ");
-    return s;
+static std::string joinStrings(const std::vector<std::string>& items, const std::string& delimiter = ", ") {
+    std::string result;
+    for(size_t i = 0; i < items.size(); i++) {
+        result += items[i];
+        if(i < items.size() - 1) result += delimiter;
+    }
+    return result;
 }
 
-static std::string list_display(const std::vector<std::string>& strings){
-    return "[" + enumerate_strings(strings) + "]";
+static std::string formatList(const std::vector<std::string>& items) {
+    return "[" + joinStrings(items) + "]";
 }
 
-static std::string function_display(const std::string name, const std::vector<std::string>& strings){
-    return name + "(" + enumerate_strings(strings) + ")";
+static std::string formatCall(const std::string& name, const std::vector<std::string>& args) {
+    return name + "(" + joinStrings(args) + ")";
 }
 
-static bool is_primitive_type(std::string type){
-    return !type.compare("int32") || !type.compare("unit") || !type.compare("bool") || !type.compare("string");
+// NodeBase implementation
+NodeBase::NodeBase(int line, int col) : lineNum(line), colNum(col) {}
+
+void NodeBase::reportError(const std::string& msg) const {
+    std::cerr << currentSourceFile << ":" << lineNum << ":" << colNum << ": semantic error: " << msg << std::endl;
 }
 
-// ProgramAst
-ProgramAst::ProgramAst(int line, int column, std::vector<ClassAst*> classes)
-: BasicAst(line, column), classes(classes){}
-
-std::string ProgramAst::getString() const{
-    std::vector<std::string> classes_as_strings;
-    classes_as_strings.reserve(classes.size());
-    std::transform(classes.begin(), classes.end(), std::back_inserter(classes_as_strings),
-                [](ClassAst* obj) { return obj->getString(); });
-    return list_display(classes_as_strings);
+void NodeBase::setFile(const std::string& file) const {
+    currentSourceFile = file;
 }
 
-ProgramAst::~ProgramAst(){
-    for(auto c : classes)
-        delete c;
-    classes.clear();
+NodeBase::~NodeBase() {}
+
+// Expression implementation
+std::string Expression::getTypeInfo() const {
+    return typeInfo;
 }
 
-// ClassAst
-ClassAst::ClassAst(int line, int column, std::string name, std::string parentName, std::vector<FieldAst*> fields, std::vector<MethodAst*> methods) 
-: BasicAst(line, column), name(name), parentName(parentName), fields(fields), methods(methods){}
+Expression::~Expression() {}
 
-std::string ClassAst::getString() const{
-    std::vector<std::string> fields_as_string, methods_as_string;
-    fields_as_string.reserve(fields.size());
-    methods_as_string.reserve(methods.size());
-    std::transform(fields.begin(), fields.end(), std::back_inserter(fields_as_string),
-                [](FieldAst* obj) { return obj->getString(); });
-    std::transform(methods.begin(), methods.end(), std::back_inserter(methods_as_string),
-                [](MethodAst* obj) { return obj->getString(); });
-    return function_display("Class", {name, parentName, list_display(fields_as_string), list_display(methods_as_string)});
+// CompoundExpr implementation
+CompoundExpr::CompoundExpr(int line, int col, std::vector<Expression*> stmts)
+: Expression(line, col), statements(stmts) {
+    typeInfo = "unit";
 }
 
-ClassAst::~ClassAst(){
-    for(auto f : fields)
-        delete f;
-    fields.clear();
-    for(auto m : methods)
-        delete m;
-    methods.clear();
+std::string CompoundExpr::serialize() const {
+    std::vector<std::string> stmtStrings;
+    stmtStrings.reserve(statements.size());
+    for(auto stmt : statements) {
+        stmtStrings.push_back(stmt->serialize());
+    }
+    return formatCall("Block", {formatList(stmtStrings)});
 }
 
-// FieldAst
-FieldAst::FieldAst(int line, int column, std::string variableName, std::string variableType)
-: BasicAst(line, column), variableName(variableName), variableType(variableType), assign(nullptr){}
-
-FieldAst::FieldAst(int line, int column, std::string variableName, std::string variableType, ExprAst* assign)
-: BasicAst(line, column), variableName(variableName), variableType(variableType), assign(assign){}
-
-std::string FieldAst::getString() const{
-    return function_display("Field", {variableName, variableType, assign ? assign->getString() : "<no-init>"});
+CompoundExpr::~CompoundExpr() {
+    for(auto stmt : statements) delete stmt;
 }
 
-FieldAst::~FieldAst(){
-    if(assign)
-        delete assign;
+// ConditionalExpr implementation
+ConditionalExpr::ConditionalExpr(int line, int col, Expression* cond, Expression* thenExpr, Expression* elseExpr)
+: Expression(line, col), condition(cond), thenBranch(thenExpr), elseBranch(elseExpr) {}
+
+std::string ConditionalExpr::serialize() const {
+    return formatCall("If", {
+        condition->serialize(),
+        thenBranch->serialize(),
+        elseBranch ? elseBranch->serialize() : "<no-else>"
+    });
 }
 
-// MethodAst
-MethodAst::MethodAst(int line, int column, std::string name, std::vector<FormalAst*> formals, std::string type, ExprBlockAst* block)
-: BasicAst(line, column), name(name), type(type), formals(formals), block(block){}
-
-std::string MethodAst::getString() const{
-    std::vector<std::string> formals_as_string;
-    formals_as_string.reserve(formals.size());
-    std::transform(formals.begin(), formals.end(), std::back_inserter(formals_as_string),
-                [](FormalAst* obj) { return obj->getString(); });
-    return function_display("Method", {name, list_display(formals_as_string), type, block->getString()});
+ConditionalExpr::~ConditionalExpr() {
+    delete condition;
+    delete thenBranch;
+    if(elseBranch) delete elseBranch;
 }
 
-MethodAst::~MethodAst(){
-    for(auto f : formals)
-        delete f;
-    formals.clear();
-    delete block;
+// LoopExpr implementation
+LoopExpr::LoopExpr(int line, int col, Expression* cond, Expression* loopBody)
+: Expression(line, col), condition(cond), body(loopBody) {
+    typeInfo = "unit";
 }
 
-// FormalAst
-FormalAst::FormalAst(int line, int column, std::string parameterName, std::string parameterType)
-: BasicAst(line, column), parameterName(parameterName), parameterType(parameterType){}
-
-std::string FormalAst::getString() const{
-    return function_display("Formal", {parameterName, parameterType});
+std::string LoopExpr::serialize() const {
+    return formatCall("While", {condition->serialize(), body->serialize()});
 }
 
-FormalAst::~FormalAst(){}
-
-// ExprAst
-std::string ExprAst::getType() const{
-    return type;
+LoopExpr::~LoopExpr() {
+    delete condition;
+    delete body;
 }
 
-ExprAst::~ExprAst(){}
+// VarDeclExpr implementation
+VarDeclExpr::VarDeclExpr(int line, int col, std::string varName, std::string type, 
+                         Expression* init, Expression* scopeExpr)
+: Expression(line, col), name(varName), varType(type), initializer(init), scope(scopeExpr) {}
 
-// ExprBlockAst
-ExprBlockAst::ExprBlockAst(int line, int column, std::vector<ExprAst*> exprs)
-: ExprAst(line, column), exprs(exprs){
-    type = "unit";
+std::string VarDeclExpr::serialize() const {
+    return formatCall("Let", {
+        name,
+        varType,
+        initializer ? initializer->serialize() : "<no-init>",
+        scope->serialize()
+    });
 }
 
-std::string ExprBlockAst::getString() const{
-    std::vector<std::string> exprs_as_string;
-    exprs_as_string.reserve(exprs.size());
-    std::transform(exprs.begin(), exprs.end(), std::back_inserter(exprs_as_string),
-                [](ExprAst* obj) { return obj->getString(); });
-    return function_display("Block", {list_display(exprs_as_string)});
+VarDeclExpr::~VarDeclExpr() {
+    if(initializer) delete initializer;
+    delete scope;
 }
 
-ExprBlockAst::~ExprBlockAst(){
-    for(auto e : exprs)
-        delete e;
-    exprs.clear();
+// BinaryOpExpr implementation
+BinaryOpExpr::BinaryOpExpr(int line, int col, std::string operation, Expression* lhs, Expression* rhs)
+: Expression(line, col), op(operation), left(lhs), right(rhs) {}
+
+std::string BinaryOpExpr::serialize() const {
+    return formatCall("BinOp", {op, left->serialize(), right->serialize()});
 }
 
-// ExprIfAst
-ExprIfAst::ExprIfAst(int line, int column, ExprAst *exprCond, ExprAst *exprThen)
-: ExprAst(line, column), exprCond(exprCond), exprThen(exprThen), exprElse(nullptr){
-    type = "unit";
+BinaryOpExpr::~BinaryOpExpr() {
+    delete left;
+    delete right;
 }
 
-ExprIfAst::ExprIfAst(int line, int column, ExprAst *exprCond, ExprAst *exprThen, ExprAst *exprElse)
-: ExprAst(line, column), exprCond(exprCond), exprThen(exprThen), exprElse(exprElse){}
+// UnaryOpExpr implementation
+UnaryOpExpr::UnaryOpExpr(int line, int col, std::string operation, Expression* expr)
+: Expression(line, col), op(operation), operand(expr) {}
 
-std::string ExprIfAst::getString() const{
-    return function_display("If", {exprCond->getString(), exprThen->getString(), exprElse ? exprElse->getString() : "<no-else>"});
+std::string UnaryOpExpr::serialize() const {
+    return formatCall("UnOp", {op, operand->serialize()});
 }
 
-ExprIfAst::~ExprIfAst(){
-    delete exprCond;
-    delete exprThen;
-    if(exprElse)
-        delete exprElse;
+UnaryOpExpr::~UnaryOpExpr() {
+    delete operand;
 }
 
-// ExprWhileAst
-ExprWhileAst::ExprWhileAst(int line, int column, ExprAst *exprCond, ExprAst *exprDo)
-: ExprAst(line, column), exprCond(exprCond), exprDo(exprDo){
-    type = "unit";
+// AssignmentExpr implementation
+AssignmentExpr::AssignmentExpr(int line, int col, std::string targetName, Expression* val)
+: Expression(line, col), target(targetName), value(val) {}
+
+std::string AssignmentExpr::serialize() const {
+    return formatCall("Assign", {target, value->serialize()});
 }
 
-std::string ExprWhileAst::getString() const{
-    return function_display("While", {exprCond->getString(), exprDo->getString()});
+AssignmentExpr::~AssignmentExpr() {
+    delete value;
 }
 
-ExprWhileAst::~ExprWhileAst(){
-    delete exprCond;
-    delete exprDo;
+// MethodCallExpr implementation
+MethodCallExpr::MethodCallExpr(int line, int col, Expression* recv, std::string method, std::vector<Expression*> args)
+: Expression(line, col), receiver(recv), methodName(method), arguments(args) {}
+
+std::string MethodCallExpr::serialize() const {
+    std::vector<std::string> argStrings;
+    argStrings.reserve(arguments.size());
+    for(auto arg : arguments) {
+        argStrings.push_back(arg->serialize());
+    }
+    return formatCall("Call", {receiver->serialize(), methodName, formatList(argStrings)});
 }
 
-// ExprLetAst
-ExprLetAst::ExprLetAst(int line, int column, std::string object_id, std::string type_id, ExprAst *exprIn)
-: ExprAst(line, column), object_id(object_id), type_id(type_id), assign(nullptr), exprIn(exprIn){}
-
-ExprLetAst::ExprLetAst(int line, int column, std::string object_id, std::string type_id, ExprAst *assign, ExprAst *exprIn)
-: ExprAst(line, column), object_id(object_id), type_id(type_id), assign(assign), exprIn(exprIn){}
-
-std::string ExprLetAst::getString() const{
-    return function_display("Let", {object_id, type_id, assign ? assign->getString() : "<no-init>", exprIn->getString()});
+MethodCallExpr::~MethodCallExpr() {
+    delete receiver;
+    for(auto arg : arguments) delete arg;
 }
 
-ExprLetAst::~ExprLetAst(){
-    if(assign)
-        delete assign;
-    delete exprIn;
+// NewObjectExpr implementation
+NewObjectExpr::NewObjectExpr(int line, int col, std::string type)
+: Expression(line, col), className(type) {
+    typeInfo = type;
 }
 
-// ExprBinopAst
-ExprBinopAst::ExprBinopAst(int line, int column, std::string operator_str, ExprAst *expr1, ExprAst *expr2)
-: ExprAst(line, column), operator_str(operator_str), expr1(expr1), expr2(expr2){}
-
-std::string ExprBinopAst::getString() const{
-    return function_display("BinOp", {operator_str, expr1->getString(), expr2->getString()});
+std::string NewObjectExpr::serialize() const {
+    return formatCall("New", {className});
 }
 
-ExprBinopAst::~ExprBinopAst(){
-    delete expr1;
-    delete expr2;
+NewObjectExpr::~NewObjectExpr() {}
+
+// LiteralExpr implementation
+LiteralExpr::LiteralExpr(int line, int col, std::string val, std::string type)
+: Expression(line, col), value(val) {
+    typeInfo = type;
 }
 
-// ExprUnopAst
-ExprUnopAst::ExprUnopAst(int line, int column, std::string operator_str, ExprAst *expr)
-: ExprAst(line, column), operator_str(operator_str), expr(expr){}
-
-std::string ExprUnopAst::getString() const{
-    return function_display("UnOp", {operator_str, expr->getString()});
+std::string LiteralExpr::serialize() const {
+    return formatCall("Literal", {value, typeInfo});
 }
 
-ExprUnopAst::~ExprUnopAst(){
-    delete expr;
+LiteralExpr::~LiteralExpr() {}
+
+// IdentifierExpr implementation
+IdentifierExpr::IdentifierExpr(int line, int col, std::string id)
+: Expression(line, col), name(id) {}
+
+std::string IdentifierExpr::serialize() const {
+    return formatCall("ObjectIdentifier", {name});
 }
 
-// ExprAssignAst
-ExprAssignAst::ExprAssignAst(int line, int column, std::string object_id, ExprAst *assign)
-: ExprAst(line, column), object_id(object_id), assign(assign){}
+IdentifierExpr::~IdentifierExpr() {}
 
-std::string ExprAssignAst::getString() const{
-    return function_display("Assign", {object_id, assign->getString()});
+// Parameter implementation
+Parameter::Parameter(int line, int col, std::string paramName, std::string paramType)
+: NodeBase(line, col), name(paramName), type(paramType) {}
+
+std::string Parameter::serialize() const {
+    return formatCall("Formal", {name, type});
 }
 
-ExprAssignAst::~ExprAssignAst(){
-    delete assign;
+Parameter::~Parameter() {}
+
+// MethodDef implementation
+MethodDef::MethodDef(int line, int col, std::string methodName, std::vector<Parameter*> parameters,
+                     std::string retType, CompoundExpr* methodBody)
+: NodeBase(line, col), name(methodName), returnType(retType), params(parameters), body(methodBody) {}
+
+std::string MethodDef::serialize() const {
+    std::vector<std::string> paramStrings;
+    paramStrings.reserve(params.size());
+    for(auto param : params) {
+        paramStrings.push_back(param->serialize());
+    }
+    return formatCall("Method", {name, formatList(paramStrings), returnType, body->serialize()});
 }
 
-// ExprCallAst
-ExprCallAst::ExprCallAst(int line, int column, ExprAst *caller, std::string object_id, std::vector<ExprAst*> args)
-: ExprAst(line, column), caller(caller), object_id(object_id), args(args){}
-
-std::string ExprCallAst::getString() const{
-    std::vector<std::string> args_as_string;
-    args_as_string.reserve(args.size());
-    std::transform(args.begin(), args.end(), std::back_inserter(args_as_string),
-                [](ExprAst* obj) { return obj->getString(); });
-    return function_display("Call", {caller->getString(), object_id, list_display(args_as_string)});
+MethodDef::~MethodDef() {
+    for(auto param : params) delete param;
+    delete body;
 }
 
-ExprCallAst::~ExprCallAst(){
-    delete caller;
-    for(auto a : args)
-        delete a;
-    args.clear();
+// FieldDef implementation
+FieldDef::FieldDef(int line, int col, std::string fieldName, std::string fieldType, Expression* init)
+: NodeBase(line, col), name(fieldName), type(fieldType), initialValue(init) {}
+
+std::string FieldDef::serialize() const {
+    return formatCall("Field", {name, type, initialValue ? initialValue->serialize() : "<no-init>"});
 }
 
-// ExprNewAst
-ExprNewAst::ExprNewAst(int line, int column, std::string type_id)
-: ExprAst(line, column), type_id(type_id){
-    type = type_id;
+FieldDef::~FieldDef() {
+    if(initialValue) delete initialValue;
 }
 
-std::string ExprNewAst::getString() const{
-    return function_display("New", {type_id});
+// ClassDef implementation
+ClassDef::ClassDef(int line, int col, std::string className, std::string parentClass,
+                   std::vector<FieldDef*> classFields, std::vector<MethodDef*> classMethods)
+: NodeBase(line, col), name(className), parent(parentClass), fields(classFields), methods(classMethods) {}
+
+std::string ClassDef::serialize() const {
+    std::vector<std::string> fieldStrings, methodStrings;
+    fieldStrings.reserve(fields.size());
+    methodStrings.reserve(methods.size());
+    
+    for(auto field : fields) fieldStrings.push_back(field->serialize());
+    for(auto method : methods) methodStrings.push_back(method->serialize());
+    
+    return formatCall("Class", {name, parent, formatList(fieldStrings), formatList(methodStrings)});
 }
 
-ExprNewAst::~ExprNewAst(){}
-
-// ExprLiteralAst
-ExprLiteralAst::ExprLiteralAst(int line, int column, std::string id, std::string type)
-: ExprAst(line, column), id(id), tmp_type(type){
-    this->type = type;
+ClassDef::~ClassDef() {
+    for(auto field : fields) delete field;
+    for(auto method : methods) delete method;
 }
 
-std::string ExprLiteralAst::getString() const{
-    return function_display("Literal", {id, type});
+// Program implementation
+Program::Program(int line, int col, std::vector<ClassDef*> programClasses)
+: NodeBase(line, col), classes(programClasses) {}
+
+std::string Program::serialize() const {
+    std::vector<std::string> classStrings;
+    classStrings.reserve(classes.size());
+    for(auto cls : classes) {
+        classStrings.push_back(cls->serialize());
+    }
+    return formatList(classStrings);
 }
 
-ExprLiteralAst::~ExprLiteralAst(){}
-
-// ExprObjectIdAst
-ExprObjectIdAst::ExprObjectIdAst(int line, int column, std::string id)
-: ExprAst(line, column), id(id){}
-
-std::string ExprObjectIdAst::getString() const{
-    return function_display("ObjectIdentifier", {id});
+Program::~Program() {
+    for(auto cls : classes) delete cls;
 }
-
-ExprObjectIdAst::~ExprObjectIdAst(){}
-
-// BasicAst
-BasicAst::BasicAst(int line, int column)
-: line(line), column(column){}
-
-void BasicAst::printSemanticError(const std::string &message) const{
-    std::cerr << globalSourceFile << ":" << line << ":" << column << ": semantic error: " << message << std::endl;
-}
-
-void BasicAst::setSourceFile(const std::string &sourceFile) const{
-    globalSourceFile = sourceFile;
-}
-
-BasicAst::~BasicAst(){}

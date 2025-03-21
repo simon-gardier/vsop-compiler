@@ -112,18 +112,18 @@
 %token <int> INTEGER_LIT        "integer-literal"
 
 // Type declarations for non-terminals
-%type <std::vector<ClassAst*>> program class-list
-%type <ClassAst*> single-class
-%type <ClassBody> members
-%type <FieldAst*> field-decl
-%type <MethodAst*> method-decl
+%type <std::vector<ClassDef*>> program class-list
+%type <ClassDef*> single-class
+%type <ClassMembers> members
+%type <FieldDef*> field-decl
+%type <MethodDef*> method-decl
 %type <std::string> type-spec
-%type <std::vector<FormalAst*>> param-list
-%type <FormalAst*> single-param
-%type <ExprBlockAst*> code-block
-%type <std::vector<ExprAst*>> expr-sequence arg-list arg-list-opt
-%type <ExprAst*> single-expr conditional loop variable-binding assignment unary-op binary-op method-call object-creation
-%type <ExprLiteralAst*> constant
+%type <std::vector<Parameter*>> param-list
+%type <Parameter*> single-param
+%type <CompoundExpr*> code-block
+%type <std::vector<Expression*>> expr-sequence arg-list arg-list-opt
+%type <Expression*> single-expr conditional loop variable-binding assignment unary-op binary-op method-call object-creation
+%type <LiteralExpr*> constant
 
 %right ASSIGN
 %left AND
@@ -142,7 +142,7 @@
 
 // Program is the root node
 program: 
-    class-list { driver.programAst = std::make_unique<ProgramAst>(@1.begin.line, @1.begin.column, $1); $$ = $1; }
+    class-list { driver.programAst = std::make_unique<Program>(@1.begin.line, @1.begin.column, $1); $$ = $1; }
 ;
 
 // One or more class definitions
@@ -154,9 +154,9 @@ class-list:
 // A class definition with optional parent
 single-class:
     CLASS TYPE_ID LBRACE members RBRACE 
-        { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, "Object", $4.fields, $4.methods); }
+        { $$ = new ClassDef(@1.begin.line, @1.begin.column, $2, "Object", $4.fields, $4.methods); }
     | CLASS TYPE_ID EXTENDS TYPE_ID LBRACE members RBRACE 
-        { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, $4, $6.fields, $6.methods); }
+        { $$ = new ClassDef(@1.begin.line, @1.begin.column, $2, $4, $6.fields, $6.methods); }
 ;
 
 // Class members (fields and methods)
@@ -169,15 +169,15 @@ members:
 // Field declaration with optional initialization
 field-decl:
     OBJECT_ID COLON type-spec SEMICOLON 
-        { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3); }
+        { $$ = new FieldDef(@1.begin.line, @1.begin.column, $1, $3); }
     | OBJECT_ID COLON type-spec ASSIGN single-expr SEMICOLON 
-        { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3, $5); }
+        { $$ = new FieldDef(@1.begin.line, @1.begin.column, $1, $3, $5); }
 ;
 
 // Method declaration
 method-decl:
     OBJECT_ID LPAR param-list RPAR COLON type-spec code-block 
-        { $$ = new MethodAst(@1.begin.line, @1.begin.column, $1, $3, $6, $7); }
+        { $$ = new MethodDef(@1.begin.line, @1.begin.column, $1, $3, $6, $7); }
 ;
 
 // Type specification
@@ -198,12 +198,12 @@ param-list:
 
 // Single parameter declaration
 single-param:
-    OBJECT_ID COLON type-spec { $$ = new FormalAst(@1.begin.line, @1.begin.column, $1, $3); }
+    OBJECT_ID COLON type-spec { $$ = new Parameter(@1.begin.line, @1.begin.column, $1, $3); }
 ;
 
 // Block of expressions
 code-block:
-    LBRACE expr-sequence RBRACE { $$ = new ExprBlockAst(@1.begin.line, @1.begin.column, $2); }
+    LBRACE expr-sequence RBRACE { $$ = new CompoundExpr(@1.begin.line, @1.begin.column, $2); }
 ;
 
 // Sequence of expressions
@@ -226,10 +226,10 @@ single-expr:
 
 // Basic expressions
 single-expr:
-    SELF                { $$ = new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"); }
-    | OBJECT_ID         { $$ = new ExprObjectIdAst(@1.begin.line, @1.begin.column, $1); }
+    SELF                { $$ = new IdentifierExpr(@1.begin.line, @1.begin.column, "self"); }
+    | OBJECT_ID         { $$ = new IdentifierExpr(@1.begin.line, @1.begin.column, $1); }
     | constant          { $$ = $1; }
-    | LPAR RPAR         { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "()", "unit"); }
+    | LPAR RPAR         { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, "()", "unit"); }
     | LPAR single-expr RPAR    { $$ = $2; }
 ;
 
@@ -253,78 +253,73 @@ arg-list:
 // Conditional expression
 conditional:
     IF single-expr THEN single-expr 
-        { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4); }
+        { $$ = new ConditionalExpr(@1.begin.line, @1.begin.column, $2, $4); }
     | IF single-expr THEN single-expr ELSE single-expr 
-        { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4, $6); }
+        { $$ = new ConditionalExpr(@1.begin.line, @1.begin.column, $2, $4, $6); }
 ;
 
 // Loop expression
 loop:
-    WHILE single-expr DO single-expr { $$ = new ExprWhileAst(@1.begin.line, @1.begin.column, $2, $4); }
+    WHILE single-expr DO single-expr { $$ = new LoopExpr(@1.begin.line, @1.begin.column, $2, $4); }
 ;
 
 // Variable binding
 variable-binding:
     LET OBJECT_ID COLON type-spec IN single-expr 
-        { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6); }
+        { $$ = new VarDeclExpr(@1.begin.line, @1.begin.column, $2, $4, nullptr, $6); }
     | LET OBJECT_ID COLON type-spec ASSIGN single-expr IN single-expr 
-        { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6, $8); }
+        { $$ = new VarDeclExpr(@1.begin.line, @1.begin.column, $2, $4, $6, $8); }
 ;
 
 // Assignment
 assignment:
-    OBJECT_ID ASSIGN single-expr { $$ = new ExprAssignAst(@1.begin.line, @1.begin.column, $1, $3); }
+    OBJECT_ID ASSIGN single-expr { $$ = new AssignmentExpr(@1.begin.line, @1.begin.column, $1, $3); }
 ;
 
 // Unary operations
 unary-op:
-    NOT single-expr      { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "not", $2); }
-    | MINUS single-expr  { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "-", $2); }
-    | ISNULL single-expr { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "isnull", $2); }
+    NOT single-expr      { $$ = new UnaryOpExpr(@1.begin.line, @1.begin.column, "not", $2); }
+    | MINUS single-expr  { $$ = new UnaryOpExpr(@1.begin.line, @1.begin.column, "-", $2); }
+    | ISNULL single-expr { $$ = new UnaryOpExpr(@1.begin.line, @1.begin.column, "isnull", $2); }
 ;
 
 // Binary operations
 binary-op:
-    single-expr PLUS single-expr %prec PLUS                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "+", $1, $3); }
-    | single-expr EQUAL single-expr %prec EQUAL             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "=", $1, $3); }
-    | single-expr LOWER single-expr %prec LOWER             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<", $1, $3); }
-    | single-expr LOWER_EQUAL single-expr %prec LOWER_EQUAL { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<=", $1, $3); }
-    | single-expr MINUS single-expr %prec MINUS             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "-", $1, $3); }
-    | single-expr TIMES single-expr %prec TIMES             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "*", $1, $3); }
-    | single-expr DIV single-expr %prec DIV                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "/", $1, $3); }
-    | single-expr POW single-expr %prec POW                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "^", $1, $3); }
-    | single-expr AND single-expr %prec AND                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "and", $1, $3); }
+    single-expr PLUS single-expr        { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "+", $1, $3); }
+    | single-expr EQUAL single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "=", $1, $3); }
+    | single-expr LOWER single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "<", $1, $3); }
+    | single-expr LOWER_EQUAL single-expr { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "<=", $1, $3); }
+    | single-expr MINUS single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "-", $1, $3); }
+    | single-expr TIMES single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "*", $1, $3); }
+    | single-expr DIV single-expr       { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "/", $1, $3); }
+    | single-expr POW single-expr       { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "^", $1, $3); }
+    | single-expr AND single-expr       { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "and", $1, $3); }
 ;
 
 // Method invocation
 method-call:
     OBJECT_ID LPAR arg-list-opt RPAR            
-        { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"), $1, $3); }
+        { $$ = new MethodCallExpr(@1.begin.line, @1.begin.column, new IdentifierExpr(@1.begin.line, @1.begin.column, "self"), $1, $3); }
     | single-expr DOT OBJECT_ID LPAR arg-list-opt RPAR 
-        { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, $1, $3, $5); }
+        { $$ = new MethodCallExpr(@1.begin.line, @1.begin.column, $1, $3, $5); }
 ;
 
 // Object instantiation
 object-creation:
-    NEW TYPE_ID { $$ = new ExprNewAst(@1.begin.line, @1.begin.column, $2); }
+    NEW TYPE_ID { $$ = new NewObjectExpr(@1.begin.line, @1.begin.column, $2); }
 ;
 
 // Constants
 constant:
-    INTEGER_LIT  { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, std::to_string($1), "int32"); }
-    | STRING_LIT { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, $1, "string"); }
-    | TRUE       { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "true", "bool"); }
-    | FALSE      { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "false", "bool"); }
+    INTEGER_LIT  { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, std::to_string($1), "int32"); }
+    | STRING_LIT { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, $1, "string"); }
+    | TRUE       { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, "true", "bool"); }
+    | FALSE      { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, "false", "bool"); }
 ;
 %%
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
 {
     const position &pos = l.begin;
-
-    cerr << *(pos.filename) << ":"
-         << pos.line << ":" 
-         << pos.column << ": "
-         << m
-         << endl;
+    std::cerr << *(pos.filename) << ":" << pos.line << ":" << pos.column << ": " << m << std::endl;
 }

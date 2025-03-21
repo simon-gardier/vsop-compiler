@@ -127,10 +127,9 @@ int Driver::parse()
     scan_begin();
     Parser parser(*this);
     result = parser.parse();
-    std::cout << "Finished parsing whith result " << std::endl;
     if (programAst == nullptr)
     {
-        std::cout << "Failed to build AST" << std::endl;
+        std::cerr << "Failed to build AST" << std::endl;
         result = 1;
     }
     scan_end();

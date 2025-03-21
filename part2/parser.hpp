@@ -407,10 +407,13 @@ namespace VSOP {
     union union_type
     {
       // single-class
-      char dummy1[sizeof (ClassAst*)];
+      char dummy1[sizeof (ClassDef*)];
 
       // members
-      char dummy2[sizeof (ClassBody)];
+      char dummy2[sizeof (ClassMembers)];
+
+      // code-block
+      char dummy3[sizeof (CompoundExpr*)];
 
       // single-expr
       // conditional
@@ -421,22 +424,19 @@ namespace VSOP {
       // binary-op
       // method-call
       // object-creation
-      char dummy3[sizeof (ExprAst*)];
-
-      // code-block
-      char dummy4[sizeof (ExprBlockAst*)];
-
-      // constant
-      char dummy5[sizeof (ExprLiteralAst*)];
+      char dummy4[sizeof (Expression*)];
 
       // field-decl
-      char dummy6[sizeof (FieldAst*)];
+      char dummy5[sizeof (FieldDef*)];
 
-      // single-param
-      char dummy7[sizeof (FormalAst*)];
+      // constant
+      char dummy6[sizeof (LiteralExpr*)];
 
       // method-decl
-      char dummy8[sizeof (MethodAst*)];
+      char dummy7[sizeof (MethodDef*)];
+
+      // single-param
+      char dummy8[sizeof (Parameter*)];
 
       // "integer-literal"
       char dummy9[sizeof (int)];
@@ -450,15 +450,15 @@ namespace VSOP {
 
       // program
       // class-list
-      char dummy11[sizeof (std::vector<ClassAst*>)];
+      char dummy11[sizeof (std::vector<ClassDef*>)];
 
       // expr-sequence
       // arg-list-opt
       // arg-list
-      char dummy12[sizeof (std::vector<ExprAst*>)];
+      char dummy12[sizeof (std::vector<Expression*>)];
 
       // param-list
-      char dummy13[sizeof (std::vector<FormalAst*>)];
+      char dummy13[sizeof (std::vector<Parameter*>)];
     };
 
     /// The size of the largest semantic type.
@@ -676,11 +676,15 @@ namespace VSOP {
         switch (this->kind ())
     {
       case symbol_kind::S_48_single_class: // single-class
-        value.move< ClassAst* > (std::move (that.value));
+        value.move< ClassDef* > (std::move (that.value));
         break;
 
       case symbol_kind::S_members: // members
-        value.move< ClassBody > (std::move (that.value));
+        value.move< ClassMembers > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_55_code_block: // code-block
+        value.move< CompoundExpr* > (std::move (that.value));
         break;
 
       case symbol_kind::S_57_single_expr: // single-expr
@@ -692,27 +696,23 @@ namespace VSOP {
       case symbol_kind::S_65_binary_op: // binary-op
       case symbol_kind::S_66_method_call: // method-call
       case symbol_kind::S_67_object_creation: // object-creation
-        value.move< ExprAst* > (std::move (that.value));
-        break;
-
-      case symbol_kind::S_55_code_block: // code-block
-        value.move< ExprBlockAst* > (std::move (that.value));
-        break;
-
-      case symbol_kind::S_constant: // constant
-        value.move< ExprLiteralAst* > (std::move (that.value));
+        value.move< Expression* > (std::move (that.value));
         break;
 
       case symbol_kind::S_50_field_decl: // field-decl
-        value.move< FieldAst* > (std::move (that.value));
+        value.move< FieldDef* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_54_single_param: // single-param
-        value.move< FormalAst* > (std::move (that.value));
+      case symbol_kind::S_constant: // constant
+        value.move< LiteralExpr* > (std::move (that.value));
         break;
 
       case symbol_kind::S_51_method_decl: // method-decl
-        value.move< MethodAst* > (std::move (that.value));
+        value.move< MethodDef* > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_54_single_param: // single-param
+        value.move< Parameter* > (std::move (that.value));
         break;
 
       case symbol_kind::S_INTEGER_LIT: // "integer-literal"
@@ -729,17 +729,17 @@ namespace VSOP {
 
       case symbol_kind::S_program: // program
       case symbol_kind::S_47_class_list: // class-list
-        value.move< std::vector<ClassAst*> > (std::move (that.value));
+        value.move< std::vector<ClassDef*> > (std::move (that.value));
         break;
 
       case symbol_kind::S_56_expr_sequence: // expr-sequence
       case symbol_kind::S_58_arg_list_opt: // arg-list-opt
       case symbol_kind::S_59_arg_list: // arg-list
-        value.move< std::vector<ExprAst*> > (std::move (that.value));
+        value.move< std::vector<Expression*> > (std::move (that.value));
         break;
 
       case symbol_kind::S_53_param_list: // param-list
-        value.move< std::vector<FormalAst*> > (std::move (that.value));
+        value.move< std::vector<Parameter*> > (std::move (that.value));
         break;
 
       default:
@@ -766,13 +766,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, ClassAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ClassDef*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const ClassAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ClassDef*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -780,13 +780,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, ClassBody&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, ClassMembers&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const ClassBody& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const ClassMembers& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -794,13 +794,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, ExprAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, CompoundExpr*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const ExprAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const CompoundExpr*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -808,13 +808,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, ExprBlockAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, Expression*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const ExprBlockAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const Expression*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -822,13 +822,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, ExprLiteralAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, FieldDef*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const ExprLiteralAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const FieldDef*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -836,13 +836,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, FieldAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, LiteralExpr*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const FieldAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const LiteralExpr*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -850,13 +850,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, FormalAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, MethodDef*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const FormalAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const MethodDef*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -864,13 +864,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, MethodAst*&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, Parameter*&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const MethodAst*& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const Parameter*& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -906,13 +906,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<ClassAst*>&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, std::vector<ClassDef*>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const std::vector<ClassAst*>& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const std::vector<ClassDef*>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -920,13 +920,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<ExprAst*>&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, std::vector<Expression*>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const std::vector<ExprAst*>& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const std::vector<Expression*>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -934,13 +934,13 @@ namespace VSOP {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, std::vector<FormalAst*>&& v, location_type&& l)
+      basic_symbol (typename Base::kind_type t, std::vector<Parameter*>&& v, location_type&& l)
         : Base (t)
         , value (std::move (v))
         , location (std::move (l))
       {}
 #else
-      basic_symbol (typename Base::kind_type t, const std::vector<FormalAst*>& v, const location_type& l)
+      basic_symbol (typename Base::kind_type t, const std::vector<Parameter*>& v, const location_type& l)
         : Base (t)
         , value (v)
         , location (l)
@@ -970,11 +970,15 @@ namespace VSOP {
 switch (yykind)
     {
       case symbol_kind::S_48_single_class: // single-class
-        value.template destroy< ClassAst* > ();
+        value.template destroy< ClassDef* > ();
         break;
 
       case symbol_kind::S_members: // members
-        value.template destroy< ClassBody > ();
+        value.template destroy< ClassMembers > ();
+        break;
+
+      case symbol_kind::S_55_code_block: // code-block
+        value.template destroy< CompoundExpr* > ();
         break;
 
       case symbol_kind::S_57_single_expr: // single-expr
@@ -986,27 +990,23 @@ switch (yykind)
       case symbol_kind::S_65_binary_op: // binary-op
       case symbol_kind::S_66_method_call: // method-call
       case symbol_kind::S_67_object_creation: // object-creation
-        value.template destroy< ExprAst* > ();
-        break;
-
-      case symbol_kind::S_55_code_block: // code-block
-        value.template destroy< ExprBlockAst* > ();
-        break;
-
-      case symbol_kind::S_constant: // constant
-        value.template destroy< ExprLiteralAst* > ();
+        value.template destroy< Expression* > ();
         break;
 
       case symbol_kind::S_50_field_decl: // field-decl
-        value.template destroy< FieldAst* > ();
+        value.template destroy< FieldDef* > ();
         break;
 
-      case symbol_kind::S_54_single_param: // single-param
-        value.template destroy< FormalAst* > ();
+      case symbol_kind::S_constant: // constant
+        value.template destroy< LiteralExpr* > ();
         break;
 
       case symbol_kind::S_51_method_decl: // method-decl
-        value.template destroy< MethodAst* > ();
+        value.template destroy< MethodDef* > ();
+        break;
+
+      case symbol_kind::S_54_single_param: // single-param
+        value.template destroy< Parameter* > ();
         break;
 
       case symbol_kind::S_INTEGER_LIT: // "integer-literal"
@@ -1023,17 +1023,17 @@ switch (yykind)
 
       case symbol_kind::S_program: // program
       case symbol_kind::S_47_class_list: // class-list
-        value.template destroy< std::vector<ClassAst*> > ();
+        value.template destroy< std::vector<ClassDef*> > ();
         break;
 
       case symbol_kind::S_56_expr_sequence: // expr-sequence
       case symbol_kind::S_58_arg_list_opt: // arg-list-opt
       case symbol_kind::S_59_arg_list: // arg-list
-        value.template destroy< std::vector<ExprAst*> > ();
+        value.template destroy< std::vector<Expression*> > ();
         break;
 
       case symbol_kind::S_53_param_list: // param-list
-        value.template destroy< std::vector<FormalAst*> > ();
+        value.template destroy< std::vector<Parameter*> > ();
         break;
 
       default:
@@ -2234,11 +2234,15 @@ switch (yykind)
     switch (this->kind ())
     {
       case symbol_kind::S_48_single_class: // single-class
-        value.copy< ClassAst* > (YY_MOVE (that.value));
+        value.copy< ClassDef* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_members: // members
-        value.copy< ClassBody > (YY_MOVE (that.value));
+        value.copy< ClassMembers > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_55_code_block: // code-block
+        value.copy< CompoundExpr* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_57_single_expr: // single-expr
@@ -2250,27 +2254,23 @@ switch (yykind)
       case symbol_kind::S_65_binary_op: // binary-op
       case symbol_kind::S_66_method_call: // method-call
       case symbol_kind::S_67_object_creation: // object-creation
-        value.copy< ExprAst* > (YY_MOVE (that.value));
-        break;
-
-      case symbol_kind::S_55_code_block: // code-block
-        value.copy< ExprBlockAst* > (YY_MOVE (that.value));
-        break;
-
-      case symbol_kind::S_constant: // constant
-        value.copy< ExprLiteralAst* > (YY_MOVE (that.value));
+        value.copy< Expression* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_50_field_decl: // field-decl
-        value.copy< FieldAst* > (YY_MOVE (that.value));
+        value.copy< FieldDef* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_54_single_param: // single-param
-        value.copy< FormalAst* > (YY_MOVE (that.value));
+      case symbol_kind::S_constant: // constant
+        value.copy< LiteralExpr* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_51_method_decl: // method-decl
-        value.copy< MethodAst* > (YY_MOVE (that.value));
+        value.copy< MethodDef* > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_54_single_param: // single-param
+        value.copy< Parameter* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_INTEGER_LIT: // "integer-literal"
@@ -2287,17 +2287,17 @@ switch (yykind)
 
       case symbol_kind::S_program: // program
       case symbol_kind::S_47_class_list: // class-list
-        value.copy< std::vector<ClassAst*> > (YY_MOVE (that.value));
+        value.copy< std::vector<ClassDef*> > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_56_expr_sequence: // expr-sequence
       case symbol_kind::S_58_arg_list_opt: // arg-list-opt
       case symbol_kind::S_59_arg_list: // arg-list
-        value.copy< std::vector<ExprAst*> > (YY_MOVE (that.value));
+        value.copy< std::vector<Expression*> > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_53_param_list: // param-list
-        value.copy< std::vector<FormalAst*> > (YY_MOVE (that.value));
+        value.copy< std::vector<Parameter*> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -2330,11 +2330,15 @@ switch (yykind)
     switch (this->kind ())
     {
       case symbol_kind::S_48_single_class: // single-class
-        value.move< ClassAst* > (YY_MOVE (s.value));
+        value.move< ClassDef* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_members: // members
-        value.move< ClassBody > (YY_MOVE (s.value));
+        value.move< ClassMembers > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_55_code_block: // code-block
+        value.move< CompoundExpr* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_57_single_expr: // single-expr
@@ -2346,27 +2350,23 @@ switch (yykind)
       case symbol_kind::S_65_binary_op: // binary-op
       case symbol_kind::S_66_method_call: // method-call
       case symbol_kind::S_67_object_creation: // object-creation
-        value.move< ExprAst* > (YY_MOVE (s.value));
-        break;
-
-      case symbol_kind::S_55_code_block: // code-block
-        value.move< ExprBlockAst* > (YY_MOVE (s.value));
-        break;
-
-      case symbol_kind::S_constant: // constant
-        value.move< ExprLiteralAst* > (YY_MOVE (s.value));
+        value.move< Expression* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_50_field_decl: // field-decl
-        value.move< FieldAst* > (YY_MOVE (s.value));
+        value.move< FieldDef* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_54_single_param: // single-param
-        value.move< FormalAst* > (YY_MOVE (s.value));
+      case symbol_kind::S_constant: // constant
+        value.move< LiteralExpr* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_51_method_decl: // method-decl
-        value.move< MethodAst* > (YY_MOVE (s.value));
+        value.move< MethodDef* > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_54_single_param: // single-param
+        value.move< Parameter* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_INTEGER_LIT: // "integer-literal"
@@ -2383,17 +2383,17 @@ switch (yykind)
 
       case symbol_kind::S_program: // program
       case symbol_kind::S_47_class_list: // class-list
-        value.move< std::vector<ClassAst*> > (YY_MOVE (s.value));
+        value.move< std::vector<ClassDef*> > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_56_expr_sequence: // expr-sequence
       case symbol_kind::S_58_arg_list_opt: // arg-list-opt
       case symbol_kind::S_59_arg_list: // arg-list
-        value.move< std::vector<ExprAst*> > (YY_MOVE (s.value));
+        value.move< std::vector<Expression*> > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_53_param_list: // param-list
-        value.move< std::vector<FormalAst*> > (YY_MOVE (s.value));
+        value.move< std::vector<Parameter*> > (YY_MOVE (s.value));
         break;
 
       default:

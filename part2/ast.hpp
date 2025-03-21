@@ -9,172 +9,189 @@
 #include <unordered_map>
 #include <map>
 
-class BasicAst {
-public:
-    BasicAst(int line, int column);
-    virtual std::string getString() const = 0;
-    void printSemanticError(const std::string &message) const;
-    void setSourceFile(const std::string &sourceFile) const;
-    virtual ~BasicAst();
-    int line, column;
-};
-
-class ExprAst : public BasicAst{
-public:
-    ExprAst(int line, int column) : BasicAst(line, column){}
-    std::string getType() const;
-    virtual ~ExprAst() override;
+// Base node for all AST elements
+class NodeBase {
 protected:
-    std::string type;
+    int lineNum, colNum;
+public:
+    NodeBase(int line, int col);
+    virtual std::string serialize() const = 0;
+    void reportError(const std::string &msg) const;
+    void setFile(const std::string &file) const;
+    virtual ~NodeBase();
 };
 
-class ExprBlockAst : public ExprAst{
+// Base class for all expressions
+class Expression : public NodeBase {
+protected:
+    std::string typeInfo;
 public:
-    ExprBlockAst(int line, int column, std::vector<ExprAst*> exprs);
-    std::string getString() const override;
-    ~ExprBlockAst();
-    std::vector<ExprAst*> exprs;
+    Expression(int line, int col) : NodeBase(line, col) {}
+    std::string getTypeInfo() const;
+    virtual ~Expression() override;
 };
 
-class ExprIfAst : public ExprAst{
+// Compound expression (block)
+class CompoundExpr : public Expression {
 public:
-    ExprIfAst(int line, int column, ExprAst *exprCond, ExprAst *exprThen);
-    ExprIfAst(int line, int column, ExprAst *exprCond, ExprAst *exprThen, ExprAst *exprElse);
-    std::string getString() const override;
-    ~ExprIfAst();
-    ExprAst *exprCond, *exprThen, *exprElse;
+    std::vector<Expression*> statements;
+    CompoundExpr(int line, int col, std::vector<Expression*> stmts);
+    std::string serialize() const override;
+    ~CompoundExpr();
 };
 
-class ExprWhileAst : public ExprAst{
+// Conditional expression
+class ConditionalExpr : public Expression {
 public:
-    ExprWhileAst(int line, int column, ExprAst *exprCond, ExprAst *exprDo);
-    std::string getString() const override;
-    ~ExprWhileAst();
-    ExprAst *exprCond, *exprDo;
+    Expression *condition, *thenBranch, *elseBranch;
+    ConditionalExpr(int line, int col, Expression *cond, Expression *thenExpr, Expression *elseExpr = nullptr);
+    std::string serialize() const override;
+    ~ConditionalExpr();
 };
 
-class ExprLetAst : public ExprAst{
+// Loop expression
+class LoopExpr : public Expression {
 public:
-    ExprLetAst(int line, int column, std::string object_id, std::string type_id, ExprAst *exprIn);
-    ExprLetAst(int line, int column, std::string object_id, std::string type_id, ExprAst *assign, ExprAst *exprIn);
-    std::string getString() const override;
-    ~ExprLetAst();
-    std::string object_id, type_id;
-    ExprAst *assign, *exprIn;
+    Expression *condition, *body;
+    LoopExpr(int line, int col, Expression *cond, Expression *loopBody);
+    std::string serialize() const override;
+    ~LoopExpr();
 };
 
-class ExprBinopAst : public ExprAst{
+// Variable declaration
+class VarDeclExpr : public Expression {
 public:
-    ExprBinopAst(int ine, int column, std::string operator_str, ExprAst *expr1, ExprAst *expr2);
-    std::string getString() const override;
-    ~ExprBinopAst();
-    std::string operator_str;
-    ExprAst *expr1, *expr2;
+    std::string name, varType;
+    Expression *initializer, *scope;
+    VarDeclExpr(int line, int col, std::string varName, std::string type, Expression *init, Expression *scopeExpr);
+    std::string serialize() const override;
+    ~VarDeclExpr();
 };
 
-class ExprUnopAst : public ExprAst{
+// Binary operation
+class BinaryOpExpr : public Expression {
 public:
-    ExprUnopAst(int line, int column, std::string operator_str, ExprAst *expr);
-    std::string getString() const override;
-    ~ExprUnopAst();
-    std::string operator_str;
-    ExprAst *expr;
+    std::string op;
+    Expression *left, *right;
+    BinaryOpExpr(int line, int col, std::string operation, Expression *lhs, Expression *rhs);
+    std::string serialize() const override;
+    ~BinaryOpExpr();
 };
 
-class ExprAssignAst : public ExprAst{
+// Unary operation
+class UnaryOpExpr : public Expression {
 public:
-    ExprAssignAst(int line, int column, std::string object_id, ExprAst *assign);
-    std::string getString() const override;
-    ~ExprAssignAst();
-    std::string object_id;
-    ExprAst *assign;
+    std::string op;
+    Expression *operand;
+    UnaryOpExpr(int line, int col, std::string operation, Expression *expr);
+    std::string serialize() const override;
+    ~UnaryOpExpr();
 };
 
-class ExprCallAst : public ExprAst{
+// Assignment expression
+class AssignmentExpr : public Expression {
 public:
-    ExprCallAst(int line, int column, ExprAst *caller, std::string object_id, std::vector<ExprAst*> args);
-    std::string getString() const override;
-    ~ExprCallAst();
-    ExprAst *caller;
-    std::string object_id;
-    std::vector<ExprAst*> args;
+    std::string target;
+    Expression *value;
+    AssignmentExpr(int line, int col, std::string targetName, Expression *val);
+    std::string serialize() const override;
+    ~AssignmentExpr();
 };
 
-class ExprNewAst : public ExprAst{
+// Method invocation
+class MethodCallExpr : public Expression {
 public:
-    ExprNewAst(int line, int column, std::string type_id);
-    std::string getString() const override;
-    ~ExprNewAst();
-    std::string type_id;
+    Expression *receiver;
+    std::string methodName;
+    std::vector<Expression*> arguments;
+    MethodCallExpr(int line, int col, Expression *recv, std::string method, std::vector<Expression*> args);
+    std::string serialize() const override;
+    ~MethodCallExpr();
 };
 
-class ExprLiteralAst : public ExprAst{
+// Object instantiation
+class NewObjectExpr : public Expression {
 public:
-    ExprLiteralAst(int line, int column, std::string id, std::string type);
-    std::string getString() const override;
-    ~ExprLiteralAst();
-    std::string id, tmp_type;
+    std::string className;
+    NewObjectExpr(int line, int col, std::string type);
+    std::string serialize() const override;
+    ~NewObjectExpr();
 };
 
-class ExprObjectIdAst : public ExprAst{
+// Literal value
+class LiteralExpr : public Expression {
 public:
-    ExprObjectIdAst(int line, int column, std::string id);
-    std::string getString() const override;
-    ~ExprObjectIdAst();
-    std::string id;
+    std::string value;
+    LiteralExpr(int line, int col, std::string val, std::string type);
+    std::string serialize() const override;
+    ~LiteralExpr();
 };
 
-class FormalAst : public BasicAst{
+// Identifier reference
+class IdentifierExpr : public Expression {
 public:
-    FormalAst(int line, int column, std::string parameterName, std::string parameterType);
-    std::string getString() const override;
-    ~FormalAst();
-    std::string parameterName, parameterType;
+    std::string name;
+    IdentifierExpr(int line, int col, std::string id);
+    std::string serialize() const override;
+    ~IdentifierExpr();
 };
 
-class MethodAst : public BasicAst{
+// Method parameter
+class Parameter : public NodeBase {
 public:
-    MethodAst(int line, int column, std::string name, std::vector<FormalAst*> formals, std::string type, ExprBlockAst* block);
-    std::string getString() const override;
-    ~MethodAst();
     std::string name, type;
-    std::vector<FormalAst*> formals;
-    ExprBlockAst* block;
+    Parameter(int line, int col, std::string paramName, std::string paramType);
+    std::string serialize() const override;
+    ~Parameter();
 };
 
-class FieldAst : public BasicAst{
+// Method definition
+class MethodDef : public NodeBase {
 public:
-    FieldAst(int line, int column, std::string variableName, std::string variableType);
-    FieldAst(int line, int column, std::string variableName, std::string variableType, ExprAst* assign);
-    std::string getString() const override;
-    ~FieldAst();
-    std::string variableName, variableType;
-    ExprAst* assign;
+    std::string name, returnType;
+    std::vector<Parameter*> params;
+    CompoundExpr* body;
+    MethodDef(int line, int col, std::string methodName, std::vector<Parameter*> parameters, 
+             std::string retType, CompoundExpr* methodBody);
+    std::string serialize() const override;
+    ~MethodDef();
 };
 
-struct ClassBody{
-    std::vector<FieldAst*> fields;
-    std::vector<MethodAst*> methods;
-};
-
-class ClassAst : public BasicAst{
+// Field definition
+class FieldDef : public NodeBase {
 public:
-    ClassAst(int line, int column, std::string name, std::string parentName, std::vector<FieldAst*> fields, std::vector<MethodAst*> methods);
-    std::string getString() const override;
-    ~ClassAst();
-
-    std::string name, parentName;
-    std::vector<FieldAst*> fields;
-    std::vector<MethodAst*> methods;
+    std::string name, type;
+    Expression* initialValue;
+    FieldDef(int line, int col, std::string fieldName, std::string fieldType, Expression* init = nullptr);
+    std::string serialize() const override;
+    ~FieldDef();
 };
 
-class ProgramAst : public BasicAst{
-public:
-    ProgramAst(int line, int column, std::vector<ClassAst*> classes);
-    std::string getString() const override;
-    ~ProgramAst();
+// Class members container
+struct ClassMembers {
+    std::vector<FieldDef*> fields;
+    std::vector<MethodDef*> methods;
+};
 
-    std::vector<ClassAst*> classes;
+// Class definition
+class ClassDef : public NodeBase {
+public:
+    std::string name, parent;
+    std::vector<FieldDef*> fields;
+    std::vector<MethodDef*> methods;
+    ClassDef(int line, int col, std::string className, std::string parentClass,
+            std::vector<FieldDef*> classFields, std::vector<MethodDef*> classMethods);
+    std::string serialize() const override;
+    ~ClassDef();
+};
+
+// Program root
+class Program : public NodeBase {
+public:
+    std::vector<ClassDef*> classes;
+    Program(int line, int col, std::vector<ClassDef*> programClasses);
+    std::string serialize() const override;
+    ~Program();
 };
 
 #endif
