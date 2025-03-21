@@ -111,24 +111,20 @@
 
 %token <int> INTEGER_LIT        "integer-literal"
 
+// Type declarations for non-terminals
+%type <std::vector<ClassAst*>> program class-list
+%type <ClassAst*> single-class
+%type <ClassBody> members
+%type <FieldAst*> field-decl
+%type <MethodAst*> method-decl
+%type <std::string> type-spec
+%type <std::vector<FormalAst*>> param-list
+%type <FormalAst*> single-param
+%type <ExprBlockAst*> code-block
+%type <std::vector<ExprAst*>> expr-sequence arg-list arg-list-opt
+%type <ExprAst*> single-expr conditional loop variable-binding assignment unary-op binary-op method-call object-creation
+%type <ExprLiteralAst*> constant
 
-%nterm program 
-%nterm <ClassAst*> class 
-%nterm <FieldAst*> field 
-%nterm <MethodAst*> method 
-%nterm <std::vector<FormalAst*>> formals 
-%nterm <FormalAst*> formal 
-%nterm <ExprAst*> expr if while let object-assign unop binop call new
-%nterm <ExprBlockAst*> block 
-%nterm <std::string> type 
-%nterm <ExprLiteralAst*> literal
-
-%nterm <std::vector<ClassAst*>> classes
-%nterm <ClassBody> class-body // array Ast-list[2] - fields and methods
-%nterm <std::vector<ExprAst*>> exprs args args-optional
-
-
-// Precedence
 %right ASSIGN
 %left AND
 %right NOT
@@ -144,123 +140,182 @@
 
 %start program;
 
-program: // AST-list
-    classes { driver.programAst = std::make_unique<ProgramAst>(@1.begin.line, @1.begin.column, $1); }
-   
-classes:
-    class           { $$.push_back($1); }
-    | classes class { $1.push_back($2); $$ = $1; }
+// Program is the root node
+program: 
+    class-list { driver.programAst = std::make_unique<ProgramAst>(@1.begin.line, @1.begin.column, $1); $$ = $1; }
+;
 
-class: // AST-function
-    CLASS TYPE_ID LBRACE class-body RBRACE { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, "Object", $4.fields, $4.methods); };
-    | CLASS TYPE_ID EXTENDS TYPE_ID LBRACE class-body RBRACE { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, $4, $6.fields, $6.methods); };
+// One or more class definitions
+class-list:
+    single-class                { $$.push_back($1); }
+    | class-list single-class   { $1.push_back($2); $$ = $1; }
+;
 
-class-body: // array[2] of AST-list
-    %empty              {}
-    | class-body field  { $1.fields.push_back($2); $$ = $1; }
-    | class-body method { $1.methods.push_back($2); $$ = $1; };
+// A class definition with optional parent
+single-class:
+    CLASS TYPE_ID LBRACE members RBRACE 
+        { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, "Object", $4.fields, $4.methods); }
+    | CLASS TYPE_ID EXTENDS TYPE_ID LBRACE members RBRACE 
+        { $$ = new ClassAst(@1.begin.line, @1.begin.column, $2, $4, $6.fields, $6.methods); }
+;
 
-field: // AST-function
-    OBJECT_ID COLON type SEMICOLON { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3); };
-    | OBJECT_ID COLON type ASSIGN expr SEMICOLON { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3, $5); };
+// Class members (fields and methods)
+members:
+    %empty                { }
+    | members field-decl  { $1.fields.push_back($2); $$ = $1; }
+    | members method-decl { $1.methods.push_back($2); $$ = $1; }
+;
 
-method: // AST-function
-    OBJECT_ID LPAR formals RPAR COLON type block { $$ = new MethodAst(@1.begin.line, @1.begin.column, $1, $3, $6, $7); };
+// Field declaration with optional initialization
+field-decl:
+    OBJECT_ID COLON type-spec SEMICOLON 
+        { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3); }
+    | OBJECT_ID COLON type-spec ASSIGN single-expr SEMICOLON 
+        { $$ = new FieldAst(@1.begin.line, @1.begin.column, $1, $3, $5); }
+;
 
-type: // AST-data
+// Method declaration
+method-decl:
+    OBJECT_ID LPAR param-list RPAR COLON type-spec code-block 
+        { $$ = new MethodAst(@1.begin.line, @1.begin.column, $1, $3, $6, $7); }
+;
+
+// Type specification
+type-spec:
     INT32      { $$ = "int32"; }
     | BOOL     { $$ = "bool"; }
     | STRING   { $$ = "string"; }
     | UNIT     { $$ = "unit"; }
-    | TYPE_ID  { $$ = $1; };
+    | TYPE_ID  { $$ = $1; }
+;
 
-formals: // AST-list
-    %empty                 {}
-    | formal               { $$.push_back($1); }
-    | formals COMMA formal { $1.push_back($3); $$ = $1; };
+// Method parameters
+param-list:
+    %empty                    { }
+    | single-param           { $$.push_back($1); }
+    | param-list COMMA single-param { $1.push_back($3); $$ = $1; }
+;
 
-formal: // AST-typed
-    OBJECT_ID COLON type { $$ = new FormalAst(@1.begin.line, @1.begin.column, $1, $3); };
+// Single parameter declaration
+single-param:
+    OBJECT_ID COLON type-spec { $$ = new FormalAst(@1.begin.line, @1.begin.column, $1, $3); }
+;
 
-block: // AST-list
-    LBRACE exprs RBRACE { $$ = new ExprBlockAst(@1.begin.line, @1.begin.column, $2); };
+// Block of expressions
+code-block:
+    LBRACE expr-sequence RBRACE { $$ = new ExprBlockAst(@1.begin.line, @1.begin.column, $2); }
+;
 
-exprs:  // AST-list
-    expr                   { $$.push_back($1); }
-    | exprs SEMICOLON expr { $1.push_back($3); $$ = $1; };
+// Sequence of expressions
+expr-sequence:
+    single-expr                      { $$.push_back($1); }
+    | expr-sequence SEMICOLON single-expr { $1.push_back($3); $$ = $1; }
+;
 
-expr: // AST-optional
-    if                  
-    | while             
-    | let               
-    | object-assign     
-    | unop              
-    | binop             
-    | call              
-    | new               { $$ = $1; };
+// Expression types
+single-expr:
+    conditional
+    | loop
+    | variable-binding
+    | assignment
+    | unary-op
+    | binary-op
+    | method-call
+    | object-creation { $$ = $1; }
+;
 
-expr:
+// Basic expressions
+single-expr:
     SELF                { $$ = new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"); }
     | OBJECT_ID         { $$ = new ExprObjectIdAst(@1.begin.line, @1.begin.column, $1); }
-    | literal           { $$ = $1; }
+    | constant          { $$ = $1; }
     | LPAR RPAR         { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "()", "unit"); }
-    | LPAR expr RPAR    { $$ = $2; }
-    
-expr:
-    block             { $$ = $1; };
+    | LPAR single-expr RPAR    { $$ = $2; }
+;
 
-args-optional: // AST-list
-    %empty {}
-    | args { $$ = $1; };
+// Block as expression
+single-expr:
+    code-block { $$ = $1; }
+;
 
-args: // AST-list
-    expr              { $$.push_back($1); }
-    | args COMMA expr { $1.push_back($3); $$ = $1; };
+// Optional argument list
+arg-list-opt:
+    %empty { }
+    | arg-list { $$ = $1; }
+;
 
-if: // AST-function
-    IF expr THEN expr { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4); };
-    | IF expr THEN expr ELSE expr { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4, $6); };
+// Argument list
+arg-list:
+    single-expr                  { $$.push_back($1); }
+    | arg-list COMMA single-expr { $1.push_back($3); $$ = $1; }
+;
 
-while: // AST-function
-    WHILE expr DO expr { $$ = new ExprWhileAst(@1.begin.line, @1.begin.column, $2, $4); };
+// Conditional expression
+conditional:
+    IF single-expr THEN single-expr 
+        { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4); }
+    | IF single-expr THEN single-expr ELSE single-expr 
+        { $$ = new ExprIfAst(@1.begin.line, @1.begin.column, $2, $4, $6); }
+;
 
-let: // AST-function
-    LET OBJECT_ID COLON type IN expr { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6); };
-    | LET OBJECT_ID COLON type ASSIGN expr IN expr { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6, $8); };
+// Loop expression
+loop:
+    WHILE single-expr DO single-expr { $$ = new ExprWhileAst(@1.begin.line, @1.begin.column, $2, $4); }
+;
 
-object-assign: // AST-function
-    OBJECT_ID ASSIGN expr { $$ = new ExprAssignAst(@1.begin.line, @1.begin.column, $1, $3); };
+// Variable binding
+variable-binding:
+    LET OBJECT_ID COLON type-spec IN single-expr 
+        { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6); }
+    | LET OBJECT_ID COLON type-spec ASSIGN single-expr IN single-expr 
+        { $$ = new ExprLetAst(@1.begin.line, @1.begin.column, $2, $4, $6, $8); }
+;
 
-unop: // AST-function
-    NOT expr      { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "not", $2); }
-    | MINUS expr  { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "-", $2); }
-    | ISNULL expr { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "isnull", $2); };
+// Assignment
+assignment:
+    OBJECT_ID ASSIGN single-expr { $$ = new ExprAssignAst(@1.begin.line, @1.begin.column, $1, $3); }
+;
 
-binop: // AST-function
-    expr PLUS expr %prec PLUS                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "+", $1, $3); }
-    | expr EQUAL expr %prec EQUAL             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "=", $1, $3); }
-    | expr LOWER expr %prec LOWER             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<", $1, $3); }
-    | expr LOWER_EQUAL expr %prec LOWER_EQUAL { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<=", $1, $3); }
-    | expr MINUS expr %prec MINUS             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "-", $1, $3); }
-    | expr TIMES expr %prec TIMES             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "*", $1, $3); }
-    | expr DIV expr %prec DIV                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "/", $1, $3); }
-    | expr POW expr %prec POW                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "^", $1, $3); }
-    | expr AND expr %prec AND                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "and", $1, $3); };
+// Unary operations
+unary-op:
+    NOT single-expr      { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "not", $2); }
+    | MINUS single-expr  { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "-", $2); }
+    | ISNULL single-expr { $$ = new ExprUnopAst(@1.begin.line, @1.begin.column, "isnull", $2); }
+;
 
-call: // AST-function
-    OBJECT_ID LPAR args-optional RPAR            { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"), $1, $3); } 
-    | expr DOT OBJECT_ID LPAR args-optional RPAR { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, $1, $3, $5); };
+// Binary operations
+binary-op:
+    single-expr PLUS single-expr %prec PLUS                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "+", $1, $3); }
+    | single-expr EQUAL single-expr %prec EQUAL             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "=", $1, $3); }
+    | single-expr LOWER single-expr %prec LOWER             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<", $1, $3); }
+    | single-expr LOWER_EQUAL single-expr %prec LOWER_EQUAL { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "<=", $1, $3); }
+    | single-expr MINUS single-expr %prec MINUS             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "-", $1, $3); }
+    | single-expr TIMES single-expr %prec TIMES             { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "*", $1, $3); }
+    | single-expr DIV single-expr %prec DIV                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "/", $1, $3); }
+    | single-expr POW single-expr %prec POW                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "^", $1, $3); }
+    | single-expr AND single-expr %prec AND                 { $$ = new ExprBinopAst(@1.begin.line, @1.begin.column, "and", $1, $3); }
+;
 
-new: // AST-function
-    NEW TYPE_ID { $$ = new ExprNewAst(@1.begin.line, @1.begin.column, $2); };
+// Method invocation
+method-call:
+    OBJECT_ID LPAR arg-list-opt RPAR            
+        { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, new ExprObjectIdAst(@1.begin.line, @1.begin.column, "self"), $1, $3); }
+    | single-expr DOT OBJECT_ID LPAR arg-list-opt RPAR 
+        { $$ = new ExprCallAst(@1.begin.line, @1.begin.column, $1, $3, $5); }
+;
 
-literal: // AST-data
+// Object instantiation
+object-creation:
+    NEW TYPE_ID { $$ = new ExprNewAst(@1.begin.line, @1.begin.column, $2); }
+;
+
+// Constants
+constant:
     INTEGER_LIT  { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, std::to_string($1), "int32"); }
     | STRING_LIT { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, $1, "string"); }
     | TRUE       { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "true", "bool"); }
-    | FALSE      { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "false", "bool"); };
-
-
+    | FALSE      { $$ = new ExprLiteralAst(@1.begin.line, @1.begin.column, "false", "bool"); }
+;
 %%
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)

@@ -406,36 +406,36 @@ namespace VSOP {
     /// An auxiliary type to compute the largest semantic type.
     union union_type
     {
-      // class
+      // single-class
       char dummy1[sizeof (ClassAst*)];
 
-      // class-body
+      // members
       char dummy2[sizeof (ClassBody)];
 
-      // expr
-      // if
-      // while
-      // let
-      // object-assign
-      // unop
-      // binop
-      // call
-      // new
+      // single-expr
+      // conditional
+      // loop
+      // variable-binding
+      // assignment
+      // unary-op
+      // binary-op
+      // method-call
+      // object-creation
       char dummy3[sizeof (ExprAst*)];
 
-      // block
+      // code-block
       char dummy4[sizeof (ExprBlockAst*)];
 
-      // literal
+      // constant
       char dummy5[sizeof (ExprLiteralAst*)];
 
-      // field
+      // field-decl
       char dummy6[sizeof (FieldAst*)];
 
-      // formal
+      // single-param
       char dummy7[sizeof (FormalAst*)];
 
-      // method
+      // method-decl
       char dummy8[sizeof (MethodAst*)];
 
       // "integer-literal"
@@ -445,18 +445,19 @@ namespace VSOP {
       // "object-identifier"
       // "string-literal"
       // "error"
-      // type
+      // type-spec
       char dummy10[sizeof (std::string)];
 
-      // classes
+      // program
+      // class-list
       char dummy11[sizeof (std::vector<ClassAst*>)];
 
-      // exprs
-      // args-optional
-      // args
+      // expr-sequence
+      // arg-list-opt
+      // arg-list
       char dummy12[sizeof (std::vector<ExprAst*>)];
 
-      // formals
+      // param-list
       char dummy13[sizeof (std::vector<FormalAst*>)];
     };
 
@@ -616,28 +617,28 @@ namespace VSOP {
         S_INTEGER_LIT = 44,                      // "integer-literal"
         S_YYACCEPT = 45,                         // $accept
         S_program = 46,                          // program
-        S_classes = 47,                          // classes
-        S_class = 48,                            // class
-        S_49_class_body = 49,                    // class-body
-        S_field = 50,                            // field
-        S_method = 51,                           // method
-        S_type = 52,                             // type
-        S_formals = 53,                          // formals
-        S_formal = 54,                           // formal
-        S_block = 55,                            // block
-        S_exprs = 56,                            // exprs
-        S_expr = 57,                             // expr
-        S_58_args_optional = 58,                 // args-optional
-        S_args = 59,                             // args
-        S_if = 60,                               // if
-        S_while = 61,                            // while
-        S_let = 62,                              // let
-        S_63_object_assign = 63,                 // object-assign
-        S_unop = 64,                             // unop
-        S_binop = 65,                            // binop
-        S_call = 66,                             // call
-        S_new = 67,                              // new
-        S_literal = 68                           // literal
+        S_47_class_list = 47,                    // class-list
+        S_48_single_class = 48,                  // single-class
+        S_members = 49,                          // members
+        S_50_field_decl = 50,                    // field-decl
+        S_51_method_decl = 51,                   // method-decl
+        S_52_type_spec = 52,                     // type-spec
+        S_53_param_list = 53,                    // param-list
+        S_54_single_param = 54,                  // single-param
+        S_55_code_block = 55,                    // code-block
+        S_56_expr_sequence = 56,                 // expr-sequence
+        S_57_single_expr = 57,                   // single-expr
+        S_58_arg_list_opt = 58,                  // arg-list-opt
+        S_59_arg_list = 59,                      // arg-list
+        S_conditional = 60,                      // conditional
+        S_loop = 61,                             // loop
+        S_62_variable_binding = 62,              // variable-binding
+        S_assignment = 63,                       // assignment
+        S_64_unary_op = 64,                      // unary-op
+        S_65_binary_op = 65,                     // binary-op
+        S_66_method_call = 66,                   // method-call
+        S_67_object_creation = 67,               // object-creation
+        S_constant = 68                          // constant
       };
     };
 
@@ -674,43 +675,43 @@ namespace VSOP {
       {
         switch (this->kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.move< ClassAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.move< ClassBody > (std::move (that.value));
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.move< ExprAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.move< ExprBlockAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.move< ExprLiteralAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.move< FieldAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.move< FormalAst* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.move< MethodAst* > (std::move (that.value));
         break;
 
@@ -722,21 +723,22 @@ namespace VSOP {
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.move< std::string > (std::move (that.value));
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.move< std::vector<ClassAst*> > (std::move (that.value));
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.move< std::vector<ExprAst*> > (std::move (that.value));
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.move< std::vector<FormalAst*> > (std::move (that.value));
         break;
 
@@ -967,43 +969,43 @@ namespace VSOP {
         // Value type destructor.
 switch (yykind)
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.template destroy< ClassAst* > ();
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.template destroy< ClassBody > ();
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.template destroy< ExprAst* > ();
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.template destroy< ExprBlockAst* > ();
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.template destroy< ExprLiteralAst* > ();
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.template destroy< FieldAst* > ();
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.template destroy< FormalAst* > ();
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.template destroy< MethodAst* > ();
         break;
 
@@ -1015,21 +1017,22 @@ switch (yykind)
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.template destroy< std::string > ();
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.template destroy< std::vector<ClassAst*> > ();
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.template destroy< std::vector<ExprAst*> > ();
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.template destroy< std::vector<FormalAst*> > ();
         break;
 
@@ -2230,43 +2233,43 @@ switch (yykind)
   {
     switch (this->kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.copy< ClassAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.copy< ClassBody > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.copy< ExprAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.copy< ExprBlockAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.copy< ExprLiteralAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.copy< FieldAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.copy< FormalAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.copy< MethodAst* > (YY_MOVE (that.value));
         break;
 
@@ -2278,21 +2281,22 @@ switch (yykind)
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.copy< std::string > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.copy< std::vector<ClassAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.copy< std::vector<ExprAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.copy< std::vector<FormalAst*> > (YY_MOVE (that.value));
         break;
 
@@ -2325,43 +2329,43 @@ switch (yykind)
     super_type::move (s);
     switch (this->kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.move< ClassAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.move< ClassBody > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.move< ExprAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.move< ExprBlockAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.move< ExprLiteralAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.move< FieldAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.move< FormalAst* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.move< MethodAst* > (YY_MOVE (s.value));
         break;
 
@@ -2373,21 +2377,22 @@ switch (yykind)
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.move< std::string > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.move< std::vector<ClassAst*> > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.move< std::vector<ExprAst*> > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.move< std::vector<FormalAst*> > (YY_MOVE (s.value));
         break;
 
@@ -2454,7 +2459,7 @@ switch (yykind)
 
 #line 19 "parser.y"
 } // VSOP
-#line 2458 "parser.hpp"
+#line 2463 "parser.hpp"
 
 
 

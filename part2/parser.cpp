@@ -209,43 +209,43 @@ namespace VSOP {
   {
     switch (that.kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.YY_MOVE_OR_COPY< ClassAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.YY_MOVE_OR_COPY< ClassBody > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.YY_MOVE_OR_COPY< ExprAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.YY_MOVE_OR_COPY< ExprBlockAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.YY_MOVE_OR_COPY< ExprLiteralAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.YY_MOVE_OR_COPY< FieldAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.YY_MOVE_OR_COPY< FormalAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.YY_MOVE_OR_COPY< MethodAst* > (YY_MOVE (that.value));
         break;
 
@@ -257,21 +257,22 @@ namespace VSOP {
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.YY_MOVE_OR_COPY< std::string > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.YY_MOVE_OR_COPY< std::vector<ClassAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.YY_MOVE_OR_COPY< std::vector<ExprAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.YY_MOVE_OR_COPY< std::vector<FormalAst*> > (YY_MOVE (that.value));
         break;
 
@@ -290,43 +291,43 @@ namespace VSOP {
   {
     switch (that.kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.move< ClassAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.move< ClassBody > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.move< ExprAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.move< ExprBlockAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.move< ExprLiteralAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.move< FieldAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.move< FormalAst* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.move< MethodAst* > (YY_MOVE (that.value));
         break;
 
@@ -338,21 +339,22 @@ namespace VSOP {
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.move< std::string > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.move< std::vector<ClassAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.move< std::vector<ExprAst*> > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.move< std::vector<FormalAst*> > (YY_MOVE (that.value));
         break;
 
@@ -371,43 +373,43 @@ namespace VSOP {
     state = that.state;
     switch (that.kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.copy< ClassAst* > (that.value);
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.copy< ClassBody > (that.value);
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.copy< ExprAst* > (that.value);
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.copy< ExprBlockAst* > (that.value);
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.copy< ExprLiteralAst* > (that.value);
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.copy< FieldAst* > (that.value);
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.copy< FormalAst* > (that.value);
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.copy< MethodAst* > (that.value);
         break;
 
@@ -419,21 +421,22 @@ namespace VSOP {
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.copy< std::string > (that.value);
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.copy< std::vector<ClassAst*> > (that.value);
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.copy< std::vector<ExprAst*> > (that.value);
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.copy< std::vector<FormalAst*> > (that.value);
         break;
 
@@ -451,43 +454,43 @@ namespace VSOP {
     state = that.state;
     switch (that.kind ())
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         value.move< ClassAst* > (that.value);
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         value.move< ClassBody > (that.value);
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         value.move< ExprAst* > (that.value);
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         value.move< ExprBlockAst* > (that.value);
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         value.move< ExprLiteralAst* > (that.value);
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         value.move< FieldAst* > (that.value);
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         value.move< FormalAst* > (that.value);
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         value.move< MethodAst* > (that.value);
         break;
 
@@ -499,21 +502,22 @@ namespace VSOP {
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         value.move< std::string > (that.value);
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         value.move< std::vector<ClassAst*> > (that.value);
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         value.move< std::vector<ExprAst*> > (that.value);
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         value.move< std::vector<FormalAst*> > (that.value);
         break;
 
@@ -776,43 +780,43 @@ namespace VSOP {
          when using variants.  */
       switch (yyr1_[yyn])
     {
-      case symbol_kind::S_class: // class
+      case symbol_kind::S_48_single_class: // single-class
         yylhs.value.emplace< ClassAst* > ();
         break;
 
-      case symbol_kind::S_49_class_body: // class-body
+      case symbol_kind::S_members: // members
         yylhs.value.emplace< ClassBody > ();
         break;
 
-      case symbol_kind::S_expr: // expr
-      case symbol_kind::S_if: // if
-      case symbol_kind::S_while: // while
-      case symbol_kind::S_let: // let
-      case symbol_kind::S_63_object_assign: // object-assign
-      case symbol_kind::S_unop: // unop
-      case symbol_kind::S_binop: // binop
-      case symbol_kind::S_call: // call
-      case symbol_kind::S_new: // new
+      case symbol_kind::S_57_single_expr: // single-expr
+      case symbol_kind::S_conditional: // conditional
+      case symbol_kind::S_loop: // loop
+      case symbol_kind::S_62_variable_binding: // variable-binding
+      case symbol_kind::S_assignment: // assignment
+      case symbol_kind::S_64_unary_op: // unary-op
+      case symbol_kind::S_65_binary_op: // binary-op
+      case symbol_kind::S_66_method_call: // method-call
+      case symbol_kind::S_67_object_creation: // object-creation
         yylhs.value.emplace< ExprAst* > ();
         break;
 
-      case symbol_kind::S_block: // block
+      case symbol_kind::S_55_code_block: // code-block
         yylhs.value.emplace< ExprBlockAst* > ();
         break;
 
-      case symbol_kind::S_literal: // literal
+      case symbol_kind::S_constant: // constant
         yylhs.value.emplace< ExprLiteralAst* > ();
         break;
 
-      case symbol_kind::S_field: // field
+      case symbol_kind::S_50_field_decl: // field-decl
         yylhs.value.emplace< FieldAst* > ();
         break;
 
-      case symbol_kind::S_formal: // formal
+      case symbol_kind::S_54_single_param: // single-param
         yylhs.value.emplace< FormalAst* > ();
         break;
 
-      case symbol_kind::S_method: // method
+      case symbol_kind::S_51_method_decl: // method-decl
         yylhs.value.emplace< MethodAst* > ();
         break;
 
@@ -824,21 +828,22 @@ namespace VSOP {
       case symbol_kind::S_OBJECT_ID: // "object-identifier"
       case symbol_kind::S_STRING_LIT: // "string-literal"
       case symbol_kind::S_ERROR: // "error"
-      case symbol_kind::S_type: // type
+      case symbol_kind::S_52_type_spec: // type-spec
         yylhs.value.emplace< std::string > ();
         break;
 
-      case symbol_kind::S_classes: // classes
+      case symbol_kind::S_program: // program
+      case symbol_kind::S_47_class_list: // class-list
         yylhs.value.emplace< std::vector<ClassAst*> > ();
         break;
 
-      case symbol_kind::S_exprs: // exprs
-      case symbol_kind::S_58_args_optional: // args-optional
-      case symbol_kind::S_args: // args
+      case symbol_kind::S_56_expr_sequence: // expr-sequence
+      case symbol_kind::S_58_arg_list_opt: // arg-list-opt
+      case symbol_kind::S_59_arg_list: // arg-list
         yylhs.value.emplace< std::vector<ExprAst*> > ();
         break;
 
-      case symbol_kind::S_formals: // formals
+      case symbol_kind::S_53_param_list: // param-list
         yylhs.value.emplace< std::vector<FormalAst*> > ();
         break;
 
@@ -862,404 +867,404 @@ namespace VSOP {
         {
           switch (yyn)
             {
-  case 2: // program: classes
-#line 148 "parser.y"
-            { driver.programAst = std::make_unique<ProgramAst>(yystack_[0].location.begin.line, yystack_[0].location.begin.column, yystack_[0].value.as < std::vector<ClassAst*> > ()); }
-#line 869 "parser.cpp"
+  case 2: // program: class-list
+#line 145 "parser.y"
+               { driver.programAst = std::make_unique<ProgramAst>(yystack_[0].location.begin.line, yystack_[0].location.begin.column, yystack_[0].value.as < std::vector<ClassAst*> > ()); yylhs.value.as < std::vector<ClassAst*> > () = yystack_[0].value.as < std::vector<ClassAst*> > (); }
+#line 874 "parser.cpp"
     break;
 
-  case 3: // classes: class
+  case 3: // class-list: single-class
+#line 150 "parser.y"
+                                { yylhs.value.as < std::vector<ClassAst*> > ().push_back(yystack_[0].value.as < ClassAst* > ()); }
+#line 880 "parser.cpp"
+    break;
+
+  case 4: // class-list: class-list single-class
 #line 151 "parser.y"
-                    { yylhs.value.as < std::vector<ClassAst*> > ().push_back(yystack_[0].value.as < ClassAst* > ()); }
-#line 875 "parser.cpp"
+                                { yystack_[1].value.as < std::vector<ClassAst*> > ().push_back(yystack_[0].value.as < ClassAst* > ()); yylhs.value.as < std::vector<ClassAst*> > () = yystack_[1].value.as < std::vector<ClassAst*> > (); }
+#line 886 "parser.cpp"
     break;
 
-  case 4: // classes: classes class
-#line 152 "parser.y"
-                    { yystack_[1].value.as < std::vector<ClassAst*> > ().push_back(yystack_[0].value.as < ClassAst* > ()); yylhs.value.as < std::vector<ClassAst*> > () = yystack_[1].value.as < std::vector<ClassAst*> > (); }
-#line 881 "parser.cpp"
+  case 5: // single-class: "class" "type-identifier" "{" members "}"
+#line 157 "parser.y"
+        { yylhs.value.as < ClassAst* > () = new ClassAst(yystack_[4].location.begin.line, yystack_[4].location.begin.column, yystack_[3].value.as < std::string > (), "Object", yystack_[1].value.as < ClassBody > ().fields, yystack_[1].value.as < ClassBody > ().methods); }
+#line 892 "parser.cpp"
     break;
 
-  case 5: // class: "class" "type-identifier" "{" class-body "}"
-#line 155 "parser.y"
-                                           { yylhs.value.as < ClassAst* > () = new ClassAst(yystack_[4].location.begin.line, yystack_[4].location.begin.column, yystack_[3].value.as < std::string > (), "Object", yystack_[1].value.as < ClassBody > ().fields, yystack_[1].value.as < ClassBody > ().methods); }
-#line 887 "parser.cpp"
-    break;
-
-  case 6: // class: "class" "type-identifier" "extends" "type-identifier" "{" class-body "}"
-#line 156 "parser.y"
-                                                             { yylhs.value.as < ClassAst* > () = new ClassAst(yystack_[6].location.begin.line, yystack_[6].location.begin.column, yystack_[5].value.as < std::string > (), yystack_[3].value.as < std::string > (), yystack_[1].value.as < ClassBody > ().fields, yystack_[1].value.as < ClassBody > ().methods); }
-#line 893 "parser.cpp"
-    break;
-
-  case 7: // class-body: %empty
+  case 6: // single-class: "class" "type-identifier" "extends" "type-identifier" "{" members "}"
 #line 159 "parser.y"
-                        {}
-#line 899 "parser.cpp"
+        { yylhs.value.as < ClassAst* > () = new ClassAst(yystack_[6].location.begin.line, yystack_[6].location.begin.column, yystack_[5].value.as < std::string > (), yystack_[3].value.as < std::string > (), yystack_[1].value.as < ClassBody > ().fields, yystack_[1].value.as < ClassBody > ().methods); }
+#line 898 "parser.cpp"
     break;
 
-  case 8: // class-body: class-body field
-#line 160 "parser.y"
-                        { yystack_[1].value.as < ClassBody > ().fields.push_back(yystack_[0].value.as < FieldAst* > ()); yylhs.value.as < ClassBody > () = yystack_[1].value.as < ClassBody > (); }
-#line 905 "parser.cpp"
-    break;
-
-  case 9: // class-body: class-body method
-#line 161 "parser.y"
-                        { yystack_[1].value.as < ClassBody > ().methods.push_back(yystack_[0].value.as < MethodAst* > ()); yylhs.value.as < ClassBody > () = yystack_[1].value.as < ClassBody > (); }
-#line 911 "parser.cpp"
-    break;
-
-  case 10: // field: "object-identifier" ":" type ";"
+  case 7: // members: %empty
 #line 164 "parser.y"
-                                   { yylhs.value.as < FieldAst* > () = new FieldAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, yystack_[3].value.as < std::string > (), yystack_[1].value.as < std::string > ()); }
-#line 917 "parser.cpp"
+                          { }
+#line 904 "parser.cpp"
     break;
 
-  case 11: // field: "object-identifier" ":" type "<-" expr ";"
+  case 8: // members: members field-decl
 #line 165 "parser.y"
-                                                 { yylhs.value.as < FieldAst* > () = new FieldAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[5].value.as < std::string > (), yystack_[3].value.as < std::string > (), yystack_[1].value.as < ExprAst* > ()); }
-#line 923 "parser.cpp"
+                          { yystack_[1].value.as < ClassBody > ().fields.push_back(yystack_[0].value.as < FieldAst* > ()); yylhs.value.as < ClassBody > () = yystack_[1].value.as < ClassBody > (); }
+#line 910 "parser.cpp"
     break;
 
-  case 12: // method: "object-identifier" "(" formals ")" ":" type block
-#line 168 "parser.y"
-                                                 { yylhs.value.as < MethodAst* > () = new MethodAst(yystack_[6].location.begin.line, yystack_[6].location.begin.column, yystack_[6].value.as < std::string > (), yystack_[4].value.as < std::vector<FormalAst*> > (), yystack_[1].value.as < std::string > (), yystack_[0].value.as < ExprBlockAst* > ()); }
-#line 929 "parser.cpp"
+  case 9: // members: members method-decl
+#line 166 "parser.y"
+                          { yystack_[1].value.as < ClassBody > ().methods.push_back(yystack_[0].value.as < MethodAst* > ()); yylhs.value.as < ClassBody > () = yystack_[1].value.as < ClassBody > (); }
+#line 916 "parser.cpp"
     break;
 
-  case 13: // type: "int32"
-#line 171 "parser.y"
-               { yylhs.value.as < std::string > () = "int32"; }
-#line 935 "parser.cpp"
-    break;
-
-  case 14: // type: "bool"
+  case 10: // field-decl: "object-identifier" ":" type-spec ";"
 #line 172 "parser.y"
-               { yylhs.value.as < std::string > () = "bool"; }
-#line 941 "parser.cpp"
+        { yylhs.value.as < FieldAst* > () = new FieldAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, yystack_[3].value.as < std::string > (), yystack_[1].value.as < std::string > ()); }
+#line 922 "parser.cpp"
     break;
 
-  case 15: // type: "string"
-#line 173 "parser.y"
-               { yylhs.value.as < std::string > () = "string"; }
-#line 947 "parser.cpp"
-    break;
-
-  case 16: // type: "unit"
+  case 11: // field-decl: "object-identifier" ":" type-spec "<-" single-expr ";"
 #line 174 "parser.y"
-               { yylhs.value.as < std::string > () = "unit"; }
-#line 953 "parser.cpp"
+        { yylhs.value.as < FieldAst* > () = new FieldAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[5].value.as < std::string > (), yystack_[3].value.as < std::string > (), yystack_[1].value.as < ExprAst* > ()); }
+#line 928 "parser.cpp"
     break;
 
-  case 17: // type: "type-identifier"
-#line 175 "parser.y"
-               { yylhs.value.as < std::string > () = yystack_[0].value.as < std::string > (); }
-#line 959 "parser.cpp"
-    break;
-
-  case 18: // formals: %empty
-#line 178 "parser.y"
-                           {}
-#line 965 "parser.cpp"
-    break;
-
-  case 19: // formals: formal
-#line 179 "parser.y"
-                           { yylhs.value.as < std::vector<FormalAst*> > ().push_back(yystack_[0].value.as < FormalAst* > ()); }
-#line 971 "parser.cpp"
-    break;
-
-  case 20: // formals: formals "," formal
+  case 12: // method-decl: "object-identifier" "(" param-list ")" ":" type-spec code-block
 #line 180 "parser.y"
-                           { yystack_[2].value.as < std::vector<FormalAst*> > ().push_back(yystack_[0].value.as < FormalAst* > ()); yylhs.value.as < std::vector<FormalAst*> > () = yystack_[2].value.as < std::vector<FormalAst*> > (); }
-#line 977 "parser.cpp"
+        { yylhs.value.as < MethodAst* > () = new MethodAst(yystack_[6].location.begin.line, yystack_[6].location.begin.column, yystack_[6].value.as < std::string > (), yystack_[4].value.as < std::vector<FormalAst*> > (), yystack_[1].value.as < std::string > (), yystack_[0].value.as < ExprBlockAst* > ()); }
+#line 934 "parser.cpp"
     break;
 
-  case 21: // formal: "object-identifier" ":" type
-#line 183 "parser.y"
-                         { yylhs.value.as < FormalAst* > () = new FormalAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, yystack_[2].value.as < std::string > (), yystack_[0].value.as < std::string > ()); }
-#line 983 "parser.cpp"
+  case 13: // type-spec: "int32"
+#line 185 "parser.y"
+               { yylhs.value.as < std::string > () = "int32"; }
+#line 940 "parser.cpp"
     break;
 
-  case 22: // block: "{" exprs "}"
+  case 14: // type-spec: "bool"
 #line 186 "parser.y"
-                        { yylhs.value.as < ExprBlockAst* > () = new ExprBlockAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, yystack_[1].value.as < std::vector<ExprAst*> > ()); }
-#line 989 "parser.cpp"
+               { yylhs.value.as < std::string > () = "bool"; }
+#line 946 "parser.cpp"
     break;
 
-  case 23: // exprs: expr
+  case 15: // type-spec: "string"
+#line 187 "parser.y"
+               { yylhs.value.as < std::string > () = "string"; }
+#line 952 "parser.cpp"
+    break;
+
+  case 16: // type-spec: "unit"
+#line 188 "parser.y"
+               { yylhs.value.as < std::string > () = "unit"; }
+#line 958 "parser.cpp"
+    break;
+
+  case 17: // type-spec: "type-identifier"
 #line 189 "parser.y"
-                           { yylhs.value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); }
-#line 995 "parser.cpp"
+               { yylhs.value.as < std::string > () = yystack_[0].value.as < std::string > (); }
+#line 964 "parser.cpp"
     break;
 
-  case 24: // exprs: exprs ";" expr
-#line 190 "parser.y"
-                           { yystack_[2].value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); yylhs.value.as < std::vector<ExprAst*> > () = yystack_[2].value.as < std::vector<ExprAst*> > (); }
-#line 1001 "parser.cpp"
-    break;
-
-  case 25: // expr: if
-#line 193 "parser.y"
-    { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1007 "parser.cpp"
-    break;
-
-  case 26: // expr: while
+  case 18: // param-list: %empty
 #line 194 "parser.y"
-      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1013 "parser.cpp"
+                              { }
+#line 970 "parser.cpp"
     break;
 
-  case 27: // expr: let
+  case 19: // param-list: single-param
 #line 195 "parser.y"
-      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1019 "parser.cpp"
+                             { yylhs.value.as < std::vector<FormalAst*> > ().push_back(yystack_[0].value.as < FormalAst* > ()); }
+#line 976 "parser.cpp"
     break;
 
-  case 28: // expr: object-assign
+  case 20: // param-list: param-list "," single-param
 #line 196 "parser.y"
-      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1025 "parser.cpp"
+                                    { yystack_[2].value.as < std::vector<FormalAst*> > ().push_back(yystack_[0].value.as < FormalAst* > ()); yylhs.value.as < std::vector<FormalAst*> > () = yystack_[2].value.as < std::vector<FormalAst*> > (); }
+#line 982 "parser.cpp"
     break;
 
-  case 29: // expr: unop
-#line 197 "parser.y"
-      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1031 "parser.cpp"
+  case 21: // single-param: "object-identifier" ":" type-spec
+#line 201 "parser.y"
+                              { yylhs.value.as < FormalAst* > () = new FormalAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, yystack_[2].value.as < std::string > (), yystack_[0].value.as < std::string > ()); }
+#line 988 "parser.cpp"
     break;
 
-  case 30: // expr: binop
-#line 198 "parser.y"
-      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1037 "parser.cpp"
-    break;
-
-  case 31: // expr: call
-#line 199 "parser.y"
-      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1043 "parser.cpp"
-    break;
-
-  case 32: // expr: new
-#line 200 "parser.y"
-                        { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
-#line 1049 "parser.cpp"
-    break;
-
-  case 33: // expr: "self"
-#line 203 "parser.y"
-                        { yylhs.value.as < ExprAst* > () = new ExprObjectIdAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, "self"); }
-#line 1055 "parser.cpp"
-    break;
-
-  case 34: // expr: "object-identifier"
-#line 204 "parser.y"
-                        { yylhs.value.as < ExprAst* > () = new ExprObjectIdAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, yystack_[0].value.as < std::string > ()); }
-#line 1061 "parser.cpp"
-    break;
-
-  case 35: // expr: literal
-#line 205 "parser.y"
-                        { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprLiteralAst* > (); }
-#line 1067 "parser.cpp"
-    break;
-
-  case 36: // expr: "(" ")"
+  case 22: // code-block: "{" expr-sequence "}"
 #line 206 "parser.y"
-                        { yylhs.value.as < ExprAst* > () = new ExprLiteralAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "()", "unit"); }
-#line 1073 "parser.cpp"
+                                { yylhs.value.as < ExprBlockAst* > () = new ExprBlockAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, yystack_[1].value.as < std::vector<ExprAst*> > ()); }
+#line 994 "parser.cpp"
     break;
 
-  case 37: // expr: "(" expr ")"
-#line 207 "parser.y"
-                        { yylhs.value.as < ExprAst* > () = yystack_[1].value.as < ExprAst* > (); }
-#line 1079 "parser.cpp"
+  case 23: // expr-sequence: single-expr
+#line 211 "parser.y"
+                                     { yylhs.value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); }
+#line 1000 "parser.cpp"
     break;
 
-  case 38: // expr: block
-#line 210 "parser.y"
-                      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprBlockAst* > (); }
-#line 1085 "parser.cpp"
+  case 24: // expr-sequence: expr-sequence ";" single-expr
+#line 212 "parser.y"
+                                          { yystack_[2].value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); yylhs.value.as < std::vector<ExprAst*> > () = yystack_[2].value.as < std::vector<ExprAst*> > (); }
+#line 1006 "parser.cpp"
     break;
 
-  case 39: // args-optional: %empty
-#line 213 "parser.y"
-           {}
-#line 1091 "parser.cpp"
-    break;
-
-  case 40: // args-optional: args
-#line 214 "parser.y"
-           { yylhs.value.as < std::vector<ExprAst*> > () = yystack_[0].value.as < std::vector<ExprAst*> > (); }
-#line 1097 "parser.cpp"
-    break;
-
-  case 41: // args: expr
+  case 25: // single-expr: conditional
 #line 217 "parser.y"
-                      { yylhs.value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); }
-#line 1103 "parser.cpp"
+    { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1012 "parser.cpp"
     break;
 
-  case 42: // args: args "," expr
+  case 26: // single-expr: loop
 #line 218 "parser.y"
-                      { yystack_[2].value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); yylhs.value.as < std::vector<ExprAst*> > () = yystack_[2].value.as < std::vector<ExprAst*> > (); }
-#line 1109 "parser.cpp"
+      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1018 "parser.cpp"
     break;
 
-  case 43: // if: "if" expr "then" expr
+  case 27: // single-expr: variable-binding
+#line 219 "parser.y"
+      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1024 "parser.cpp"
+    break;
+
+  case 28: // single-expr: assignment
+#line 220 "parser.y"
+      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1030 "parser.cpp"
+    break;
+
+  case 29: // single-expr: unary-op
 #line 221 "parser.y"
-                      { yylhs.value.as < ExprAst* > () = new ExprIfAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1115 "parser.cpp"
+      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1036 "parser.cpp"
     break;
 
-  case 44: // if: "if" expr "then" expr "else" expr
+  case 30: // single-expr: binary-op
 #line 222 "parser.y"
-                                  { yylhs.value.as < ExprAst* > () = new ExprIfAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[4].value.as < ExprAst* > (), yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1121 "parser.cpp"
+      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1042 "parser.cpp"
     break;
 
-  case 45: // while: "while" expr "do" expr
-#line 225 "parser.y"
-                       { yylhs.value.as < ExprAst* > () = new ExprWhileAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1127 "parser.cpp"
+  case 31: // single-expr: method-call
+#line 223 "parser.y"
+      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1048 "parser.cpp"
     break;
 
-  case 46: // let: "let" "object-identifier" ":" type "in" expr
-#line 228 "parser.y"
-                                     { yylhs.value.as < ExprAst* > () = new ExprLetAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[4].value.as < std::string > (), yystack_[2].value.as < std::string > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1133 "parser.cpp"
+  case 32: // single-expr: object-creation
+#line 224 "parser.y"
+                      { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprAst* > (); }
+#line 1054 "parser.cpp"
     break;
 
-  case 47: // let: "let" "object-identifier" ":" type "<-" expr "in" expr
+  case 33: // single-expr: "self"
 #line 229 "parser.y"
-                                                   { yylhs.value.as < ExprAst* > () = new ExprLetAst(yystack_[7].location.begin.line, yystack_[7].location.begin.column, yystack_[6].value.as < std::string > (), yystack_[4].value.as < std::string > (), yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1139 "parser.cpp"
+                        { yylhs.value.as < ExprAst* > () = new ExprObjectIdAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, "self"); }
+#line 1060 "parser.cpp"
     break;
 
-  case 48: // object-assign: "object-identifier" "<-" expr
+  case 34: // single-expr: "object-identifier"
+#line 230 "parser.y"
+                        { yylhs.value.as < ExprAst* > () = new ExprObjectIdAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, yystack_[0].value.as < std::string > ()); }
+#line 1066 "parser.cpp"
+    break;
+
+  case 35: // single-expr: constant
+#line 231 "parser.y"
+                        { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprLiteralAst* > (); }
+#line 1072 "parser.cpp"
+    break;
+
+  case 36: // single-expr: "(" ")"
 #line 232 "parser.y"
-                          { yylhs.value.as < ExprAst* > () = new ExprAssignAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, yystack_[2].value.as < std::string > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1145 "parser.cpp"
+                        { yylhs.value.as < ExprAst* > () = new ExprLiteralAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "()", "unit"); }
+#line 1078 "parser.cpp"
     break;
 
-  case 49: // unop: "not" expr
-#line 235 "parser.y"
-                  { yylhs.value.as < ExprAst* > () = new ExprUnopAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "not", yystack_[0].value.as < ExprAst* > ()); }
-#line 1151 "parser.cpp"
+  case 37: // single-expr: "(" single-expr ")"
+#line 233 "parser.y"
+                               { yylhs.value.as < ExprAst* > () = yystack_[1].value.as < ExprAst* > (); }
+#line 1084 "parser.cpp"
     break;
 
-  case 50: // unop: "-" expr
-#line 236 "parser.y"
-                  { yylhs.value.as < ExprAst* > () = new ExprUnopAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "-", yystack_[0].value.as < ExprAst* > ()); }
-#line 1157 "parser.cpp"
+  case 38: // single-expr: code-block
+#line 238 "parser.y"
+               { yylhs.value.as < ExprAst* > () = yystack_[0].value.as < ExprBlockAst* > (); }
+#line 1090 "parser.cpp"
     break;
 
-  case 51: // unop: "isnull" expr
-#line 237 "parser.y"
-                  { yylhs.value.as < ExprAst* > () = new ExprUnopAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "isnull", yystack_[0].value.as < ExprAst* > ()); }
-#line 1163 "parser.cpp"
-    break;
-
-  case 52: // binop: expr "+" expr
-#line 240 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "+", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1169 "parser.cpp"
-    break;
-
-  case 53: // binop: expr "=" expr
-#line 241 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "=", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1175 "parser.cpp"
-    break;
-
-  case 54: // binop: expr "<" expr
-#line 242 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "<", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1181 "parser.cpp"
-    break;
-
-  case 55: // binop: expr "<=" expr
+  case 39: // arg-list-opt: %empty
 #line 243 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "<=", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1187 "parser.cpp"
+           { }
+#line 1096 "parser.cpp"
     break;
 
-  case 56: // binop: expr "-" expr
+  case 40: // arg-list-opt: arg-list
 #line 244 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "-", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1193 "parser.cpp"
+               { yylhs.value.as < std::vector<ExprAst*> > () = yystack_[0].value.as < std::vector<ExprAst*> > (); }
+#line 1102 "parser.cpp"
     break;
 
-  case 57: // binop: expr "*" expr
-#line 245 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "*", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1199 "parser.cpp"
+  case 41: // arg-list: single-expr
+#line 249 "parser.y"
+                                 { yylhs.value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); }
+#line 1108 "parser.cpp"
     break;
 
-  case 58: // binop: expr "/" expr
-#line 246 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "/", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1205 "parser.cpp"
+  case 42: // arg-list: arg-list "," single-expr
+#line 250 "parser.y"
+                                 { yystack_[2].value.as < std::vector<ExprAst*> > ().push_back(yystack_[0].value.as < ExprAst* > ()); yylhs.value.as < std::vector<ExprAst*> > () = yystack_[2].value.as < std::vector<ExprAst*> > (); }
+#line 1114 "parser.cpp"
     break;
 
-  case 59: // binop: expr "^" expr
-#line 247 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "^", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1211 "parser.cpp"
+  case 43: // conditional: "if" single-expr "then" single-expr
+#line 256 "parser.y"
+        { yylhs.value.as < ExprAst* > () = new ExprIfAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1120 "parser.cpp"
     break;
 
-  case 60: // binop: expr "and" expr
-#line 248 "parser.y"
-                                              { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "and", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
-#line 1217 "parser.cpp"
-    break;
-
-  case 61: // call: "object-identifier" "(" args-optional ")"
-#line 251 "parser.y"
-                                                 { yylhs.value.as < ExprAst* > () = new ExprCallAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, new ExprObjectIdAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, "self"), yystack_[3].value.as < std::string > (), yystack_[1].value.as < std::vector<ExprAst*> > ()); }
-#line 1223 "parser.cpp"
-    break;
-
-  case 62: // call: expr "." "object-identifier" "(" args-optional ")"
-#line 252 "parser.y"
-                                                 { yylhs.value.as < ExprAst* > () = new ExprCallAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[5].value.as < ExprAst* > (), yystack_[3].value.as < std::string > (), yystack_[1].value.as < std::vector<ExprAst*> > ()); }
-#line 1229 "parser.cpp"
-    break;
-
-  case 63: // new: "new" "type-identifier"
-#line 255 "parser.y"
-                { yylhs.value.as < ExprAst* > () = new ExprNewAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, yystack_[0].value.as < std::string > ()); }
-#line 1235 "parser.cpp"
-    break;
-
-  case 64: // literal: "integer-literal"
+  case 44: // conditional: "if" single-expr "then" single-expr "else" single-expr
 #line 258 "parser.y"
+        { yylhs.value.as < ExprAst* > () = new ExprIfAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[4].value.as < ExprAst* > (), yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1126 "parser.cpp"
+    break;
+
+  case 45: // loop: "while" single-expr "do" single-expr
+#line 263 "parser.y"
+                                     { yylhs.value.as < ExprAst* > () = new ExprWhileAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1132 "parser.cpp"
+    break;
+
+  case 46: // variable-binding: "let" "object-identifier" ":" type-spec "in" single-expr
+#line 269 "parser.y"
+        { yylhs.value.as < ExprAst* > () = new ExprLetAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[4].value.as < std::string > (), yystack_[2].value.as < std::string > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1138 "parser.cpp"
+    break;
+
+  case 47: // variable-binding: "let" "object-identifier" ":" type-spec "<-" single-expr "in" single-expr
+#line 271 "parser.y"
+        { yylhs.value.as < ExprAst* > () = new ExprLetAst(yystack_[7].location.begin.line, yystack_[7].location.begin.column, yystack_[6].value.as < std::string > (), yystack_[4].value.as < std::string > (), yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1144 "parser.cpp"
+    break;
+
+  case 48: // assignment: "object-identifier" "<-" single-expr
+#line 276 "parser.y"
+                                 { yylhs.value.as < ExprAst* > () = new ExprAssignAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, yystack_[2].value.as < std::string > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1150 "parser.cpp"
+    break;
+
+  case 49: // unary-op: "not" single-expr
+#line 281 "parser.y"
+                         { yylhs.value.as < ExprAst* > () = new ExprUnopAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "not", yystack_[0].value.as < ExprAst* > ()); }
+#line 1156 "parser.cpp"
+    break;
+
+  case 50: // unary-op: "-" single-expr
+#line 282 "parser.y"
+                         { yylhs.value.as < ExprAst* > () = new ExprUnopAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "-", yystack_[0].value.as < ExprAst* > ()); }
+#line 1162 "parser.cpp"
+    break;
+
+  case 51: // unary-op: "isnull" single-expr
+#line 283 "parser.y"
+                         { yylhs.value.as < ExprAst* > () = new ExprUnopAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, "isnull", yystack_[0].value.as < ExprAst* > ()); }
+#line 1168 "parser.cpp"
+    break;
+
+  case 52: // binary-op: single-expr "+" single-expr
+#line 288 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "+", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1174 "parser.cpp"
+    break;
+
+  case 53: // binary-op: single-expr "=" single-expr
+#line 289 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "=", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1180 "parser.cpp"
+    break;
+
+  case 54: // binary-op: single-expr "<" single-expr
+#line 290 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "<", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1186 "parser.cpp"
+    break;
+
+  case 55: // binary-op: single-expr "<=" single-expr
+#line 291 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "<=", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1192 "parser.cpp"
+    break;
+
+  case 56: // binary-op: single-expr "-" single-expr
+#line 292 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "-", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1198 "parser.cpp"
+    break;
+
+  case 57: // binary-op: single-expr "*" single-expr
+#line 293 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "*", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1204 "parser.cpp"
+    break;
+
+  case 58: // binary-op: single-expr "/" single-expr
+#line 294 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "/", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1210 "parser.cpp"
+    break;
+
+  case 59: // binary-op: single-expr "^" single-expr
+#line 295 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "^", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1216 "parser.cpp"
+    break;
+
+  case 60: // binary-op: single-expr "and" single-expr
+#line 296 "parser.y"
+                                                            { yylhs.value.as < ExprAst* > () = new ExprBinopAst(yystack_[2].location.begin.line, yystack_[2].location.begin.column, "and", yystack_[2].value.as < ExprAst* > (), yystack_[0].value.as < ExprAst* > ()); }
+#line 1222 "parser.cpp"
+    break;
+
+  case 61: // method-call: "object-identifier" "(" arg-list-opt ")"
+#line 302 "parser.y"
+        { yylhs.value.as < ExprAst* > () = new ExprCallAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, new ExprObjectIdAst(yystack_[3].location.begin.line, yystack_[3].location.begin.column, "self"), yystack_[3].value.as < std::string > (), yystack_[1].value.as < std::vector<ExprAst*> > ()); }
+#line 1228 "parser.cpp"
+    break;
+
+  case 62: // method-call: single-expr "." "object-identifier" "(" arg-list-opt ")"
+#line 304 "parser.y"
+        { yylhs.value.as < ExprAst* > () = new ExprCallAst(yystack_[5].location.begin.line, yystack_[5].location.begin.column, yystack_[5].value.as < ExprAst* > (), yystack_[3].value.as < std::string > (), yystack_[1].value.as < std::vector<ExprAst*> > ()); }
+#line 1234 "parser.cpp"
+    break;
+
+  case 63: // object-creation: "new" "type-identifier"
+#line 309 "parser.y"
+                { yylhs.value.as < ExprAst* > () = new ExprNewAst(yystack_[1].location.begin.line, yystack_[1].location.begin.column, yystack_[0].value.as < std::string > ()); }
+#line 1240 "parser.cpp"
+    break;
+
+  case 64: // constant: "integer-literal"
+#line 314 "parser.y"
                  { yylhs.value.as < ExprLiteralAst* > () = new ExprLiteralAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, std::to_string(yystack_[0].value.as < int > ()), "int32"); }
-#line 1241 "parser.cpp"
+#line 1246 "parser.cpp"
     break;
 
-  case 65: // literal: "string-literal"
-#line 259 "parser.y"
+  case 65: // constant: "string-literal"
+#line 315 "parser.y"
                  { yylhs.value.as < ExprLiteralAst* > () = new ExprLiteralAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, yystack_[0].value.as < std::string > (), "string"); }
-#line 1247 "parser.cpp"
+#line 1252 "parser.cpp"
     break;
 
-  case 66: // literal: "true"
-#line 260 "parser.y"
+  case 66: // constant: "true"
+#line 316 "parser.y"
                  { yylhs.value.as < ExprLiteralAst* > () = new ExprLiteralAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, "true", "bool"); }
-#line 1253 "parser.cpp"
+#line 1258 "parser.cpp"
     break;
 
-  case 67: // literal: "false"
-#line 261 "parser.y"
+  case 67: // constant: "false"
+#line 317 "parser.y"
                  { yylhs.value.as < ExprLiteralAst* > () = new ExprLiteralAst(yystack_[0].location.begin.line, yystack_[0].location.begin.column, "false", "bool"); }
-#line 1259 "parser.cpp"
+#line 1264 "parser.cpp"
     break;
 
 
-#line 1263 "parser.cpp"
+#line 1268 "parser.cpp"
 
             default:
               break;
@@ -1779,10 +1784,11 @@ namespace VSOP {
   "\"new\"", "\"not\"", "\"self\"", "\"string\"", "\"then\"", "\"true\"",
   "\"unit\"", "\"while\"", "\"type-identifier\"", "\"object-identifier\"",
   "\"string-literal\"", "\"error\"", "\"integer-literal\"", "$accept",
-  "program", "classes", "class", "class-body", "field", "method", "type",
-  "formals", "formal", "block", "exprs", "expr", "args-optional", "args",
-  "if", "while", "let", "object-assign", "unop", "binop", "call", "new",
-  "literal", YY_NULLPTR
+  "program", "class-list", "single-class", "members", "field-decl",
+  "method-decl", "type-spec", "param-list", "single-param", "code-block",
+  "expr-sequence", "single-expr", "arg-list-opt", "arg-list",
+  "conditional", "loop", "variable-binding", "assignment", "unary-op",
+  "binary-op", "method-call", "object-creation", "constant", YY_NULLPTR
   };
 #endif
 
@@ -1791,13 +1797,13 @@ namespace VSOP {
   const short
   Parser::yyrline_[] =
   {
-       0,   148,   148,   151,   152,   155,   156,   159,   160,   161,
-     164,   165,   168,   171,   172,   173,   174,   175,   178,   179,
-     180,   183,   186,   189,   190,   193,   194,   195,   196,   197,
-     198,   199,   200,   203,   204,   205,   206,   207,   210,   213,
-     214,   217,   218,   221,   222,   225,   228,   229,   232,   235,
-     236,   237,   240,   241,   242,   243,   244,   245,   246,   247,
-     248,   251,   252,   255,   258,   259,   260,   261
+       0,   145,   145,   150,   151,   156,   158,   164,   165,   166,
+     171,   173,   179,   185,   186,   187,   188,   189,   194,   195,
+     196,   201,   206,   211,   212,   217,   218,   219,   220,   221,
+     222,   223,   224,   229,   230,   231,   232,   233,   238,   243,
+     244,   249,   250,   255,   257,   263,   268,   270,   276,   281,
+     282,   283,   288,   289,   290,   291,   292,   293,   294,   295,
+     296,   301,   303,   309,   314,   315,   316,   317
   };
 
   void
@@ -1830,9 +1836,9 @@ namespace VSOP {
 
 #line 19 "parser.y"
 } // VSOP
-#line 1834 "parser.cpp"
+#line 1840 "parser.cpp"
 
-#line 264 "parser.y"
+#line 319 "parser.y"
 
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
