@@ -30,6 +30,11 @@
 // Add some assertions.
 %define parse.assert
 
+// Debugging
+%define parse.trace
+%define parse.error verbose
+%debug
+
 // C++ code put inside header file
 %code requires {
     #include <string>
@@ -101,8 +106,8 @@
 %type <std::vector<VSOP::ClassAst*>> class_list
 %type <VSOP::FieldAst*> field
 %type <VSOP::MethodAst*> method
-%type <std::vector<VSOP::FieldAst*>> field_list
-%type <std::vector<VSOP::MethodAst*>> method_list
+%type <std::vector<VSOP::Ast*>> member_list
+%type <VSOP::Ast*> member
 %type <VSOP::FormalAst*> formal
 %type <std::vector<VSOP::FormalAst*>> formal_list formals
 %type <VSOP::ExprAst*> expr block
@@ -112,11 +117,12 @@
 // Define operator precedence and associativity
 %right ASSIGN
 %left AND
+%right UNOT
 %nonassoc EQUAL LOWER LOWER_EQUAL
 %left PLUS MINUS
 %left TIMES DIV
+%right UMINUS UISNULL
 %right POW
-%right UMINUS UNOT UISNULL
 %left DOT
 
 %%
@@ -147,42 +153,41 @@ class_list
 
 // Class definition
 class
-    : "class" TYPE_IDENTIFIER "{" field_list method_list "}"
+    : "class" TYPE_IDENTIFIER "{" member_list "}"
         {
-            $$ = new ClassAst($2);
-            $$->fields = $4;
-            $$->methods = $5;
+            VSOP::ClassAst* cls = new VSOP::ClassAst($2);
+            // Separate members into fields and methods.
+            for (auto mem : $4) {
+                if (auto f = dynamic_cast<VSOP::FieldAst*>(mem))
+                    cls->fields.push_back(f);
+                else if (auto m = dynamic_cast<VSOP::MethodAst*>(mem))
+                    cls->methods.push_back(m);
+            }
+            $$ = cls;
         }
-    | "class" TYPE_IDENTIFIER "extends" TYPE_IDENTIFIER "{" field_list method_list "}"
+    | "class" TYPE_IDENTIFIER "extends" TYPE_IDENTIFIER "{" member_list "}"
         {
-            $$ = new ClassAst($2, $4);
-            $$->fields = $6;
-            $$->methods = $7;
+            VSOP::ClassAst* cls = new VSOP::ClassAst($2, $4);
+            for (auto mem : $6) {
+                if (auto f = dynamic_cast<VSOP::FieldAst*>(mem))
+                    cls->fields.push_back(f);
+                else if (auto m = dynamic_cast<VSOP::MethodAst*>(mem))
+                    cls->methods.push_back(m);
+            }
+            $$ = cls;
         }
     ;
 
-field_list
+member_list
     : /* empty */
-        {
-            $$ = std::vector<FieldAst*>();
-        }
-    | field_list field
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
+        { $$ = std::vector<VSOP::Ast*>(); }
+    | member_list member
+        { $$ = $1; $$.push_back($2); }
     ;
 
-method_list
-    : /* empty */
-        {
-            $$ = std::vector<MethodAst*>();
-        }
-    | method_list method
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
+member
+    : field  { $$ = $1; }
+    | method { $$ = $1; }
     ;
 
 // Field definition

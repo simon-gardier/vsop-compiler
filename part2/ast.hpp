@@ -20,10 +20,16 @@ namespace VSOP
     class MethodAst;
     class FormalAst;
 
+    class Ast 
+    {
+    public:
+        virtual ~Ast() = default;
+        virtual std::string getString() const = 0;
+    };
     /**
      * @brief Program AST node representing the entire program
      */
-    class ProgramAst
+    class ProgramAst : public Ast
     {
     public:
         /**
@@ -52,7 +58,7 @@ namespace VSOP
     /**
      * @brief Class AST node representing a class definition
      */
-    class ClassAst
+    class ClassAst : public Ast
     {
     public:
         /**
@@ -100,7 +106,7 @@ namespace VSOP
     /**
      * @brief Field AST node representing a class field
      */
-    class FieldAst
+    class FieldAst : public Ast
     {
     public:
         /**
@@ -144,7 +150,7 @@ namespace VSOP
     /**
      * @brief Formal parameter AST node
      */
-    class FormalAst
+    class FormalAst : public Ast
     {
     public:
         /**
@@ -177,7 +183,7 @@ namespace VSOP
     /**
      * @brief Method AST node representing a class method
      */
-    class MethodAst
+    class MethodAst : public Ast
     {
     public:
         /**
@@ -226,7 +232,7 @@ namespace VSOP
     /**
      * @brief Base class for all expressions
      */
-    class ExprAst
+    class ExprAst : public Ast
     {
     public:
         virtual ~ExprAst() = default;

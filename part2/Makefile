@@ -31,10 +31,12 @@ $(EXEC): $(OBJ)
 	$(CXX) -o $@ $(LDFLAGS) $(OBJ)
 
 parser.cpp: parser.y
-	bison $(BISONFLAGS) -o parser.cpp $^
+	bison -d $(BISONFLAGS) -o parser.cpp $^
+
+# -Wcounterexamples
 
 parser.hpp: parser.y
-	bison $(BISONFLAGS) -o parser.cpp $^
+	bison -d $(BISONFLAGS) -o parser.cpp $^
 
 lexer.cpp: lexer.lex
 	flex $(LEXFLAGS) -o lexer.cpp $^
