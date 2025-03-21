@@ -30,10 +30,8 @@
 // Add some assertions.
 %define parse.assert
 
-// Debugging
-%define parse.trace
+// Error generation
 %define parse.error verbose
-%debug
 
 // C++ code put inside header file
 %code requires {
@@ -124,6 +122,12 @@
 %right UMINUS UISNULL
 %right POW
 %left DOT
+%nonassoc THEN_PREC
+%nonassoc ELSE
+%nonassoc WHILE_PREC
+%nonassoc LET_PREC
+
+// Define operator precedence and associativity
 
 %%
 // Grammar rules for VSOP language
@@ -292,23 +296,23 @@ expr_list
 
 // Expressions
 expr
-    : "if" expr "then" expr
+    : "if" expr "then" expr %prec THEN_PREC
         {
             $$ = new IfExprAst($2, $4);
         }
-    | "if" expr "then" expr "else" expr
+    | "if" expr "then" expr "else" expr %prec ELSE
         {
             $$ = new IfExprAst($2, $4, $6);
         }
-    | "while" expr "do" expr
+    | "while" expr "do" expr %prec WHILE_PREC
         {
             $$ = new WhileExprAst($2, $4);
         }
-    | "let" OBJECT_IDENTIFIER ":" type "in" expr
+    | "let" OBJECT_IDENTIFIER ":" type "in" expr %prec LET_PREC
         {
             $$ = new LetExprAst($2, $4, nullptr, $6);
         }
-    | "let" OBJECT_IDENTIFIER ":" type "<-" expr "in" expr
+    | "let" OBJECT_IDENTIFIER ":" type "<-" expr "in" expr %prec LET_PREC
         {
             $$ = new LetExprAst($2, $4, $6, $8);
         }
