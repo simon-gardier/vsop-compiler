@@ -1,5 +1,11 @@
-/**
- * @brief Parser for VSOP compiler. Based on course example
+/* This flex/bison example is provided to you as a starting point for your
+ * assignment. You are free to use its code in your project.
+ *
+ * This example implements a simple calculator. You can use the '-l' flag to
+ * list all the tokens found in the source file, and the '-p' flag (or no flag)
+ * to parse the file and to compute the result.
+ *
+ * Also, if you have any suggestions for improvements, please let us know.
  */
 
 %skeleton "lalr1.cc" // -*- C++ -*-
@@ -10,7 +16,7 @@
 %defines
 
 // Put parser inside a namespace
-%define api.namespace {VSOP}
+%define api.namespace {VSOP} 
 
 // Give the name of the parser class
 %define api.parser.class {Parser}
@@ -34,7 +40,7 @@
 %code requires {
     #include <string>
     #include <vector>
-    #include <memory>
+    #include <array>
     #include "ast.hpp"
 
     namespace VSOP
@@ -48,393 +54,272 @@
 
 %code {
     #include "driver.hpp"
+
+    using namespace std;
 }
 
-// VSOP tokens definition
-%token <int>         INTEGER_LITERAL
-%token <std::string> STRING_LITERAL
-%token <std::string> TYPE_IDENTIFIER
-%token <std::string> OBJECT_IDENTIFIER
-// Operators
-%token LBRACE "{"
-%token RBRACE "}"
-%token LPAR "("
-%token RPAR ")"
-%token COLON ":"
-%token SEMICOLON ";"
-%token COMMA ","
-%token PLUS "+"
-%token MINUS "-"
-%token TIMES "*"
-%token DIV "/"
-%token POW "^"
-%token DOT "."
-%token EQUAL "="
-%token LOWER "<"
-%token LOWER_EQUAL "<="
-%token ASSIGN "<-"
-// Keywords
-%token AND "and"
-%token BOOL "bool"
-%token CLASS "class"
-%token DO "do"
-%token ELSE "else"
-%token EXTENDS "extends"
-%token FALSE "false"
-%token IF "if"
-%token IN "in"
-%token INT32 "int32"
-%token ISNULL "isnull"
-%token LET "let"
-%token NEW "new"
-%token NOT "not"
-%token SELF "self"
-%token STRING "string"
-%token THEN "then"
-%token TRUE "true"
-%token UNIT "unit"
-%token WHILE "while"
+// Token and symbols definitions
+%token
+    LBRACE      "{"
+    RBRACE      "}"
+    LPAR        "("
+    RPAR        ")"
+    COLON       ":"
+    SEMICOLON   ";"
+    COMMA       ","
+    PLUS        "+"
+    MINUS       "-"
+    TIMES       "*"
+    DIV         "/"
+    POW         "^"
+    DOT         "."
+    EQUAL       "="
+    LOWER       "<"
+    LOWER_EQUAL "<="
+    ASSIGN      "<-"
+    AND         "and"
+    BOOL        "bool"
+    CLASS       "class"
+    DO          "do"
+    ELSE        "else"
+    EXTENDS     "extends"
+    FALSE       "false"
+    IF          "if"
+    IN          "in"
+    INT32       "int32"
+    ISNULL      "isnull"
+    LET         "let"
+    NEW         "new"
+    NOT         "not"
+    SELF        "self"
+    STRING      "string"
+    THEN        "then"
+    TRUE        "true"
+    UNIT        "unit"
+    WHILE       "while"
+;
 
-// Define the types for non-terminals
-%type <VSOP::ProgramAst*> program
-%type <VSOP::ClassAst*> class
-%type <std::vector<VSOP::ClassAst*>> class_list
-%type <VSOP::FieldAst*> field
-%type <VSOP::MethodAst*> method
-%type <std::vector<VSOP::FieldAst*>> field_list
-%type <std::vector<VSOP::MethodAst*>> method_list
-%type <VSOP::FormalAst*> formal
-%type <std::vector<VSOP::FormalAst*>> formal_list formals
-%type <VSOP::ExprAst*> expr block
-%type <std::vector<VSOP::ExprAst*>> expr_list args
-%type <std::string> type
+%define parse.error verbose
 
-// Define operator precedence and associativity
+// For some symbols, need to store a value
+%token <std::string> 
+    TYPE_ID    "type-identifier"
+    OBJECT_ID  "object-identifier"
+    STRING_LIT "string-literal"
+    ERROR      "error"
+;
+
+%token <int> INTEGER_LIT        "integer-literal"
+
+// Type declarations for non-terminals
+%type <std::vector<ClassDef*>> program class-list
+%type <ClassDef*> single-class
+%type <ClassMembers> members
+%type <FieldDef*> field-decl
+%type <MethodDef*> method-decl
+%type <std::string> type-spec
+%type <std::vector<Parameter*>> param-list
+%type <Parameter*> single-param
+%type <CompoundExpr*> code-block
+%type <std::vector<Expression*>> expr-sequence arg-list arg-list-opt
+%type <Expression*> single-expr conditional loop variable-binding assignment unary-op binary-op method-call object-creation
+%type <LiteralExpr*> constant
+
 %right ASSIGN
 %left AND
-%nonassoc EQUAL LOWER LOWER_EQUAL
-%left PLUS MINUS
-%left TIMES DIV
+%right NOT
+%nonassoc LOWER LOWER_EQUAL EQUAL
+%left "+" "-"; // Could also do: %left PLUS MINUS
+%left "*" "/";
+%right ISNULL
 %right POW
-%right UMINUS UNOT UISNULL
 %left DOT
 
 %%
-// Grammar rules for VSOP language
+// Grammar rules
 
-// Program is a list of classes
-program
-    : class_list
-        {
-            $$ = new ProgramAst();
-            $$->classes = $1;
-            driver.programAst.reset($$);
-        }
-    ;
+%start program;
 
-class_list
-    : class
-        {
-            $$ = std::vector<ClassAst*>();
-            $$.push_back($1);
-        }
-    | class_list class
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
-    ;
+// Program is the root node
+program: 
+    class-list { driver.programAst = std::make_unique<Program>(@1.begin.line, @1.begin.column, $1); $$ = $1; }
+;
 
-// Class definition
-class
-    : "class" TYPE_IDENTIFIER "{" field_list method_list "}"
-        {
-            $$ = new ClassAst($2);
-            $$->fields = $4;
-            $$->methods = $5;
-        }
-    | "class" TYPE_IDENTIFIER "extends" TYPE_IDENTIFIER "{" field_list method_list "}"
-        {
-            $$ = new ClassAst($2, $4);
-            $$->fields = $6;
-            $$->methods = $7;
-        }
-    ;
+// One or more class definitions
+class-list:
+    single-class                { $$.push_back($1); }
+    | class-list single-class   { $1.push_back($2); $$ = $1; }
+;
 
-field_list
-    : /* empty */
-        {
-            $$ = std::vector<FieldAst*>();
-        }
-    | field_list field
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
-    ;
+// A class definition with optional parent
+single-class:
+    CLASS TYPE_ID LBRACE members RBRACE 
+        { $$ = new ClassDef(@1.begin.line, @1.begin.column, $2, "Object", $4.fields, $4.methods); }
+    | CLASS TYPE_ID EXTENDS TYPE_ID LBRACE members RBRACE 
+        { $$ = new ClassDef(@1.begin.line, @1.begin.column, $2, $4, $6.fields, $6.methods); }
+;
 
-method_list
-    : /* empty */
-        {
-            $$ = std::vector<MethodAst*>();
-        }
-    | method_list method
-        {
-            $$ = $1;
-            $$.push_back($2);
-        }
-    ;
+// Class members (fields and methods)
+members:
+    %empty                { }
+    | members field-decl  { $1.fields.push_back($2); $$ = $1; }
+    | members method-decl { $1.methods.push_back($2); $$ = $1; }
+;
 
-// Field definition
-field
-    : OBJECT_IDENTIFIER ":" type ";"
-        {
-            $$ = new FieldAst($1, $3);
-        }
-    | OBJECT_IDENTIFIER ":" type "<-" expr ";"
-        {
-            $$ = new FieldAst($1, $3, $5);
-        }
-    ;
+// Field declaration with optional initialization
+field-decl:
+    OBJECT_ID COLON type-spec SEMICOLON 
+        { $$ = new FieldDef(@1.begin.line, @1.begin.column, $1, $3); }
+    | OBJECT_ID COLON type-spec ASSIGN single-expr SEMICOLON 
+        { $$ = new FieldDef(@1.begin.line, @1.begin.column, $1, $3, $5); }
+;
 
-// Method definition
-method
-    : OBJECT_IDENTIFIER "(" formals ")" ":" type block
-        {
-            $$ = new MethodAst($1, $6, $7);
-            $$->formals = $3;
-        }
-    ;
+// Method declaration
+method-decl:
+    OBJECT_ID LPAR param-list RPAR COLON type-spec code-block 
+        { $$ = new MethodDef(@1.begin.line, @1.begin.column, $1, $3, $6, $7); }
+;
 
-// Formal parameters
-formals
-    : /* empty */
-        {
-            $$ = std::vector<FormalAst*>();
-        }
-    | formal_list
-        {
-            $$ = $1;
-        }
-    ;
+// Type specification
+type-spec:
+    INT32      { $$ = "int32"; }
+    | BOOL     { $$ = "bool"; }
+    | STRING   { $$ = "string"; }
+    | UNIT     { $$ = "unit"; }
+    | TYPE_ID  { $$ = $1; }
+;
 
-formal_list
-    : formal
-        {
-            $$ = std::vector<FormalAst*>();
-            $$.push_back($1);
-        }
-    | formal_list "," formal
-        {
-            $$ = $1;
-            $$.push_back($3);
-        }
-    ;
+// Method parameters
+param-list:
+    %empty                    { }
+    | single-param           { $$.push_back($1); }
+    | param-list COMMA single-param { $1.push_back($3); $$ = $1; }
+;
 
-formal
-    : OBJECT_IDENTIFIER ":" type
-        {
-            $$ = new FormalAst($1, $3);
-        }
-    ;
-
-// Types
-type
-    : TYPE_IDENTIFIER
-        {
-            $$ = $1;
-        }
-    | "int32"
-        {
-            $$ = "int32";
-        }
-    | "bool"
-        {
-            $$ = "bool";
-        }
-    | "string"
-        {
-            $$ = "string";
-        }
-    | "unit"
-        {
-            $$ = "unit";
-        }
-    ;
+// Single parameter declaration
+single-param:
+    OBJECT_ID COLON type-spec { $$ = new Parameter(@1.begin.line, @1.begin.column, $1, $3); }
+;
 
 // Block of expressions
-block
-    : "{" expr_list "}"
-        {
-            BlockExprAst* block = new BlockExprAst();
-            block->expressions = $2;
-            $$ = block;
-        }
-    ;
+code-block:
+    LBRACE expr-sequence RBRACE { $$ = new CompoundExpr(@1.begin.line, @1.begin.column, $2); }
+;
 
-expr_list
-    : expr
-        {
-            $$ = std::vector<ExprAst*>();
-            $$.push_back($1);
-        }
-    | expr_list ";" expr
-        {
-            $$ = $1;
-            $$.push_back($3);
-        }
-    ;
+// Sequence of expressions
+expr-sequence:
+    single-expr                      { $$.push_back($1); }
+    | expr-sequence SEMICOLON single-expr { $1.push_back($3); $$ = $1; }
+;
 
-// Expressions
-expr
-    : "if" expr "then" expr
-        {
-            $$ = new IfExprAst($2, $4);
-        }
-    | "if" expr "then" expr "else" expr
-        {
-            $$ = new IfExprAst($2, $4, $6);
-        }
-    | "while" expr "do" expr
-        {
-            $$ = new WhileExprAst($2, $4);
-        }
-    | "let" OBJECT_IDENTIFIER ":" type "in" expr
-        {
-            $$ = new LetExprAst($2, $4, nullptr, $6);
-        }
-    | "let" OBJECT_IDENTIFIER ":" type "<-" expr "in" expr
-        {
-            $$ = new LetExprAst($2, $4, $6, $8);
-        }
-    | OBJECT_IDENTIFIER "<-" expr
-        {
-            $$ = new AssignExprAst($1, $3);
-        }
-    | "not" expr %prec UNOT
-        {
-            $$ = new UnaryOpExprAst("not", $2);
-        }
-    | "-" expr %prec UMINUS
-        {
-            $$ = new UnaryOpExprAst("-", $2);
-        }
-    | "isnull" expr %prec UISNULL
-        {
-            $$ = new UnaryOpExprAst("isnull", $2);
-        }
-    | expr "=" expr
-        {
-            $$ = new BinaryOpExprAst("=", $1, $3);
-        }
-    | expr "<" expr
-        {
-            $$ = new BinaryOpExprAst("<", $1, $3);
-        }
-    | expr "<=" expr
-        {
-            $$ = new BinaryOpExprAst("<=", $1, $3);
-        }
-    | expr "+" expr
-        {
-            $$ = new BinaryOpExprAst("+", $1, $3);
-        }
-    | expr "-" expr
-        {
-            $$ = new BinaryOpExprAst("-", $1, $3);
-        }
-    | expr "*" expr
-        {
-            $$ = new BinaryOpExprAst("*", $1, $3);
-        }
-    | expr "/" expr
-        {
-            $$ = new BinaryOpExprAst("/", $1, $3);
-        }
-    | expr "^" expr
-        {
-            $$ = new BinaryOpExprAst("^", $1, $3);
-        }
-    | expr "and" expr
-        {
-            $$ = new BinaryOpExprAst("and", $1, $3);
-        }
-    | OBJECT_IDENTIFIER "(" args ")"
-        {
-            CallExprAst* call = new CallExprAst(new SelfExprAst(), $1);
-            call->arguments = $3;
-            $$ = call;
-        }
-    | expr "." OBJECT_IDENTIFIER "(" args ")"
-        {
-            CallExprAst* call = new CallExprAst($1, $3);
-            call->arguments = $5;
-            $$ = call;
-        }
-    | "new" TYPE_IDENTIFIER
-        {
-            $$ = new NewExprAst($2);
-        }
-    | OBJECT_IDENTIFIER
-        {
-            $$ = new ObjectIdExprAst($1);
-        }
-    | "self"
-        {
-            $$ = new SelfExprAst();
-        }
-    | INTEGER_LITERAL
-        {
-            $$ = new IntegerLiteralExprAst($1);
-        }
-    | STRING_LITERAL
-        {
-            $$ = new StringLiteralExprAst($1);
-        }
-    | "true"
-        {
-            $$ = new BooleanLiteralExprAst(true);
-        }
-    | "false"
-        {
-            $$ = new BooleanLiteralExprAst(false);
-        }
-    | "(" ")"
-        {
-            $$ = new UnitExprAst();
-        }
-    | "(" expr ")"
-        {
-            $$ = $2;
-        }
-    | block
-        {
-            $$ = $1;
-        }
-    ;
+// Expression types
+single-expr:
+    conditional
+    | loop
+    | variable-binding
+    | assignment
+    | unary-op
+    | binary-op
+    | method-call
+    | object-creation { $$ = $1; }
+;
 
-// Method call arguments
-args
-    : /* empty */
-        {
-            $$ = std::vector<ExprAst*>();
-        }
-    | expr_list
-        {
-            $$ = $1;
-        }
-    ;
+// Basic expressions
+single-expr:
+    SELF                { $$ = new IdentifierExpr(@1.begin.line, @1.begin.column, "self"); }
+    | OBJECT_ID         { $$ = new IdentifierExpr(@1.begin.line, @1.begin.column, $1); }
+    | constant          { $$ = $1; }
+    | LPAR RPAR         { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, "()", "unit"); }
+    | LPAR single-expr RPAR    { $$ = $2; }
+;
 
+// Block as expression
+single-expr:
+    code-block { $$ = $1; }
+;
+
+// Optional argument list
+arg-list-opt:
+    %empty { }
+    | arg-list { $$ = $1; }
+;
+
+// Argument list
+arg-list:
+    single-expr                  { $$.push_back($1); }
+    | arg-list COMMA single-expr { $1.push_back($3); $$ = $1; }
+;
+
+// Conditional expression
+conditional:
+    IF single-expr THEN single-expr 
+        { $$ = new ConditionalExpr(@1.begin.line, @1.begin.column, $2, $4); }
+    | IF single-expr THEN single-expr ELSE single-expr 
+        { $$ = new ConditionalExpr(@1.begin.line, @1.begin.column, $2, $4, $6); }
+;
+
+// Loop expression
+loop:
+    WHILE single-expr DO single-expr { $$ = new LoopExpr(@1.begin.line, @1.begin.column, $2, $4); }
+;
+
+// Variable binding
+variable-binding:
+    LET OBJECT_ID COLON type-spec IN single-expr 
+        { $$ = new VarDeclExpr(@1.begin.line, @1.begin.column, $2, $4, nullptr, $6); }
+    | LET OBJECT_ID COLON type-spec ASSIGN single-expr IN single-expr 
+        { $$ = new VarDeclExpr(@1.begin.line, @1.begin.column, $2, $4, $6, $8); }
+;
+
+// Assignment
+assignment:
+    OBJECT_ID ASSIGN single-expr { $$ = new AssignmentExpr(@1.begin.line, @1.begin.column, $1, $3); }
+;
+
+// Unary operations
+unary-op:
+    NOT single-expr      { $$ = new UnaryOpExpr(@1.begin.line, @1.begin.column, "not", $2); }
+    | MINUS single-expr  { $$ = new UnaryOpExpr(@1.begin.line, @1.begin.column, "-", $2); }
+    | ISNULL single-expr { $$ = new UnaryOpExpr(@1.begin.line, @1.begin.column, "isnull", $2); }
+;
+
+// Binary operations
+binary-op:
+    single-expr PLUS single-expr        { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "+", $1, $3); }
+    | single-expr EQUAL single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "=", $1, $3); }
+    | single-expr LOWER single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "<", $1, $3); }
+    | single-expr LOWER_EQUAL single-expr { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "<=", $1, $3); }
+    | single-expr MINUS single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "-", $1, $3); }
+    | single-expr TIMES single-expr     { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "*", $1, $3); }
+    | single-expr DIV single-expr       { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "/", $1, $3); }
+    | single-expr POW single-expr       { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "^", $1, $3); }
+    | single-expr AND single-expr       { $$ = new BinaryOpExpr(@1.begin.line, @1.begin.column, "and", $1, $3); }
+;
+
+// Method invocation
+method-call:
+    OBJECT_ID LPAR arg-list-opt RPAR            
+        { $$ = new MethodCallExpr(@1.begin.line, @1.begin.column, new IdentifierExpr(@1.begin.line, @1.begin.column, "self"), $1, $3); }
+    | single-expr DOT OBJECT_ID LPAR arg-list-opt RPAR 
+        { $$ = new MethodCallExpr(@1.begin.line, @1.begin.column, $1, $3, $5); }
+;
+
+// Object instantiation
+object-creation:
+    NEW TYPE_ID { $$ = new NewObjectExpr(@1.begin.line, @1.begin.column, $2); }
+;
+
+// Constants
+constant:
+    INTEGER_LIT  { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, std::to_string($1), "int32"); }
+    | STRING_LIT { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, $1, "string"); }
+    | TRUE       { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, "true", "bool"); }
+    | FALSE      { $$ = new LiteralExpr(@1.begin.line, @1.begin.column, "false", "bool"); }
+;
 %%
-
 // User code
 void VSOP::Parser::error(const location_type& l, const std::string& m)
 {
     const position &pos = l.begin;
-
-    std::cerr   << *(pos.filename) << ":"
-                << pos.line << ":" 
-                << pos.column << ": "
-                << m
-                << std::endl;
+    std::cerr << *(pos.filename) << ":" << pos.line << ":" << pos.column << ": " << m << std::endl;
 }

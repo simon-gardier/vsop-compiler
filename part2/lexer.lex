@@ -57,7 +57,7 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
     /* Integer literals rules */
 {int_literal}{invalid_int_reminder}+    { print_error(loc.begin, "invalid integer literal in [" + std::string(yytext) + "]");   return Parser::make_YYerror(loc); }
 {hex_literal}{invalid_hex_reminder}+    { print_error(loc.begin, "invalid integer (hexa) literal in [" + std::string(yytext) + "]"); return Parser::make_YYerror(loc); }
-{int_literal}|{hex_literal}             { long value = std::stoi(yytext, nullptr, yytext[0] == '0' && yytext[1] == 'x' ? 16 : 10); return Parser::make_INTEGER_LITERAL(value, loc); }
+{int_literal}|{hex_literal}             { long value = std::stoi(yytext, nullptr, yytext[0] == '0' && yytext[1] == 'x' ? 16 : 10); return Parser::make_INTEGER_LIT(value, loc); }
 
     /* Comments rules */
 "(*"            { comments_start.push(loc); BEGIN(COMMENT); }
@@ -70,7 +70,7 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
     /* String literals rules */
 "\""            { string_buf.clear(); string_start = loc; BEGIN(STRING); }
 
-<STRING>"\""    { BEGIN(INITIAL); return Parser::make_STRING_LITERAL(string_buf, string_start); }
+<STRING>"\""    { BEGIN(INITIAL); return Parser::make_STRING_LIT(string_buf, string_start); }
 <STRING>\n      { print_error(loc.begin, "\\n is forbiden in string"); BEGIN(INITIAL); return Parser::make_YYerror(loc); }
 <STRING>\\[ \b\t\r]*\n[ \b\t\r]*  { }
 <STRING>{esc_seq} { switch (yytext[1]) {
@@ -127,8 +127,8 @@ esc_seq             \\[btnr"\\]|\\x[0-9a-fA-F]{2}
 "unit"          return Parser::make_UNIT(loc);
 "while"         return Parser::make_WHILE(loc);
     /* Identifiers rules */
-{type_identifier}   { return Parser::make_TYPE_IDENTIFIER(yytext, loc); }
-{object_identifier} { return Parser::make_OBJECT_IDENTIFIER(yytext, loc); }
+{type_identifier}   { return Parser::make_TYPE_ID(yytext, loc); }
+{object_identifier} { return Parser::make_OBJECT_ID(yytext, loc); }
     /* Invalid characters*/
 .               { print_error(loc.begin, "invalid character: " + std::string(yytext)); return Parser::make_YYerror(loc); }
 <<EOF>>         { return Parser::make_YYEOF(loc); }

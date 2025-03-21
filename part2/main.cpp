@@ -6,6 +6,10 @@
 #include <string>
 
 #include "driver.hpp"
+<<<<<<< HEAD
+=======
+#include "ast.hpp"
+>>>>>>> 265dc7aca9663ec3fa4c1266246dab903fefa965
 
 using namespace std;
 
@@ -62,10 +66,10 @@ int main(int argc, char const *argv[])
 
     case Mode::PARSE:
         res = driver.parse();
-
         if (res == 0)
         {      
-            cout << driver.programAst->getString() << endl;
+            cout << "Finished parsing" << endl;
+            cout << driver.programAst->serialize() << endl;
         }
 
         return res;

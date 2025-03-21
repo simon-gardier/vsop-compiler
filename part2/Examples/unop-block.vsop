@@ -1,0 +1,5 @@
+class MyClass extends ItsParent {
+    someMethod(x : int32) : bool {
+        not {print("unop"); true}
+    }
+}

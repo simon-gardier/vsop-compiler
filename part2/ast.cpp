@@ -1,298 +1,282 @@
-/**
- * @brief Implementation of AST classes for VSOP compiler
- */
+#include <unordered_set>
+#include <string>
 
 #include "ast.hpp"
-#include <iterator>
-#include <sstream>
-#include <iomanip>
 
-namespace VSOP
-{
-    /**
-     * @brief Join strings with commas
-     * 
-     * @param strings Vector of strings to join
-     * @return std::string Comma-separated string
-     */
-    static std::string enumerateElements(const std::vector<std::string>& strings)
-    {
-        std::string result;
-        for(size_t i = 0; i < strings.size(); i++)
-            result += strings[i] + (i == strings.size() - 1 ? "" : ", ");
-        return result;
+static std::string currentSourceFile;
+
+static std::string joinStrings(const std::vector<std::string>& items, const std::string& delimiter = ", ") {
+    std::string result;
+    for(size_t i = 0; i < items.size(); i++) {
+        result += items[i];
+        if(i < items.size() - 1) result += delimiter;
     }
+    return result;
+}
 
-    /**
-     * @brief Format a list of strings with brackets and commas
-     * 
-     * @param strings Vector of strings to format
-     * @return std::string Formatted string with brackets and commas
-     */
-    static std::string formatStringList(const std::vector<std::string>& strings)
-    {
-        return "[" + enumerateElements(strings) + "]";
+static std::string formatList(const std::vector<std::string>& items) {
+    return "[" + joinStrings(items) + "]";
+}
+
+static std::string formatCall(const std::string& name, const std::vector<std::string>& args) {
+    return name + "(" + joinStrings(args) + ")";
+}
+
+// NodeBase implementation
+NodeBase::NodeBase(int line, int col) : lineNum(line), colNum(col) {}
+
+void NodeBase::reportError(const std::string& msg) const {
+    std::cerr << currentSourceFile << ":" << lineNum << ":" << colNum << ": semantic error: " << msg << std::endl;
+}
+
+void NodeBase::setFile(const std::string& file) const {
+    currentSourceFile = file;
+}
+
+NodeBase::~NodeBase() {}
+
+// Expression implementation
+std::string Expression::getTypeInfo() const {
+    return typeInfo;
+}
+
+Expression::~Expression() {}
+
+// CompoundExpr implementation
+CompoundExpr::CompoundExpr(int line, int col, std::vector<Expression*> stmts)
+: Expression(line, col), statements(stmts) {
+    typeInfo = "unit";
+}
+
+std::string CompoundExpr::serialize() const {
+    std::vector<std::string> stmtStrings;
+    stmtStrings.reserve(statements.size());
+    for(auto stmt : statements) {
+        stmtStrings.push_back(stmt->serialize());
     }
+    return formatCall("Block", {formatList(stmtStrings)});
+}
 
-    /**
-     * @brief Escape a string according to VSOP rules
-     * 
-     * @param str String to escape
-     * @return std::string Escaped string
-     */
-    static std::string escapeString(const std::string& str)
-    {
-        std::stringstream ss;
-        ss << "\"";
-        for (char c : str) {
-            if (c == '\"' || c == '\\' || !isprint(c)) {
-                ss << "\\x" << std::setfill('0') << std::setw(2) << std::hex << (int)(unsigned char)c;
-            } else {
-                ss << c;
-            }
-        }
-        ss << "\"";
-        return ss.str();
+CompoundExpr::~CompoundExpr() {
+    for(auto stmt : statements) delete stmt;
+}
+
+// ConditionalExpr implementation
+ConditionalExpr::ConditionalExpr(int line, int col, Expression* cond, Expression* thenExpr, Expression* elseExpr)
+: Expression(line, col), condition(cond), thenBranch(thenExpr), elseBranch(elseExpr) {}
+
+std::string ConditionalExpr::serialize() const {
+    return formatCall("If", {
+        condition->serialize(),
+        thenBranch->serialize(),
+        elseBranch ? elseBranch->serialize() : "<no-else>"
+    });
+}
+
+ConditionalExpr::~ConditionalExpr() {
+    delete condition;
+    delete thenBranch;
+    if(elseBranch) delete elseBranch;
+}
+
+// LoopExpr implementation
+LoopExpr::LoopExpr(int line, int col, Expression* cond, Expression* loopBody)
+: Expression(line, col), condition(cond), body(loopBody) {
+    typeInfo = "unit";
+}
+
+std::string LoopExpr::serialize() const {
+    return formatCall("While", {condition->serialize(), body->serialize()});
+}
+
+LoopExpr::~LoopExpr() {
+    delete condition;
+    delete body;
+}
+
+// VarDeclExpr implementation
+VarDeclExpr::VarDeclExpr(int line, int col, std::string varName, std::string type, 
+                         Expression* init, Expression* scopeExpr)
+: Expression(line, col), name(varName), varType(type), initializer(init), scope(scopeExpr) {}
+
+std::string VarDeclExpr::serialize() const {
+    return formatCall("Let", {
+        name,
+        varType,
+        initializer ? initializer->serialize() : "<no-init>",
+        scope->serialize()
+    });
+}
+
+VarDeclExpr::~VarDeclExpr() {
+    if(initializer) delete initializer;
+    delete scope;
+}
+
+// BinaryOpExpr implementation
+BinaryOpExpr::BinaryOpExpr(int line, int col, std::string operation, Expression* lhs, Expression* rhs)
+: Expression(line, col), op(operation), left(lhs), right(rhs) {}
+
+std::string BinaryOpExpr::serialize() const {
+    return formatCall("BinOp", {op, left->serialize(), right->serialize()});
+}
+
+BinaryOpExpr::~BinaryOpExpr() {
+    delete left;
+    delete right;
+}
+
+// UnaryOpExpr implementation
+UnaryOpExpr::UnaryOpExpr(int line, int col, std::string operation, Expression* expr)
+: Expression(line, col), op(operation), operand(expr) {}
+
+std::string UnaryOpExpr::serialize() const {
+    return formatCall("UnOp", {op, operand->serialize()});
+}
+
+UnaryOpExpr::~UnaryOpExpr() {
+    delete operand;
+}
+
+// AssignmentExpr implementation
+AssignmentExpr::AssignmentExpr(int line, int col, std::string targetName, Expression* val)
+: Expression(line, col), target(targetName), value(val) {}
+
+std::string AssignmentExpr::serialize() const {
+    return formatCall("Assign", {target, value->serialize()});
+}
+
+AssignmentExpr::~AssignmentExpr() {
+    delete value;
+}
+
+// MethodCallExpr implementation
+MethodCallExpr::MethodCallExpr(int line, int col, Expression* recv, std::string method, std::vector<Expression*> args)
+: Expression(line, col), receiver(recv), methodName(method), arguments(args) {}
+
+std::string MethodCallExpr::serialize() const {
+    std::vector<std::string> argStrings;
+    argStrings.reserve(arguments.size());
+    for(auto arg : arguments) {
+        argStrings.push_back(arg->serialize());
     }
+    return formatCall("Call", {receiver->serialize(), methodName, formatList(argStrings)});
+}
 
-    // Main AST class destructors
-    ProgramAst::~ProgramAst() {
-        for (auto cls : classes) {
-            delete cls;
-        }
+MethodCallExpr::~MethodCallExpr() {
+    delete receiver;
+    for(auto arg : arguments) delete arg;
+}
+
+// NewObjectExpr implementation
+NewObjectExpr::NewObjectExpr(int line, int col, std::string type)
+: Expression(line, col), className(type) {
+    typeInfo = type;
+}
+
+std::string NewObjectExpr::serialize() const {
+    return formatCall("New", {className});
+}
+
+NewObjectExpr::~NewObjectExpr() {}
+
+// LiteralExpr implementation
+LiteralExpr::LiteralExpr(int line, int col, std::string val, std::string type)
+: Expression(line, col), value(val) {
+    typeInfo = type;
+}
+
+std::string LiteralExpr::serialize() const {
+    return formatCall("Literal", {value, typeInfo});
+}
+
+LiteralExpr::~LiteralExpr() {}
+
+// IdentifierExpr implementation
+IdentifierExpr::IdentifierExpr(int line, int col, std::string id)
+: Expression(line, col), name(id) {}
+
+std::string IdentifierExpr::serialize() const {
+    return formatCall("ObjectIdentifier", {name});
+}
+
+IdentifierExpr::~IdentifierExpr() {}
+
+// Parameter implementation
+Parameter::Parameter(int line, int col, std::string paramName, std::string paramType)
+: NodeBase(line, col), name(paramName), type(paramType) {}
+
+std::string Parameter::serialize() const {
+    return formatCall("Formal", {name, type});
+}
+
+Parameter::~Parameter() {}
+
+// MethodDef implementation
+MethodDef::MethodDef(int line, int col, std::string methodName, std::vector<Parameter*> parameters,
+                     std::string retType, CompoundExpr* methodBody)
+: NodeBase(line, col), name(methodName), returnType(retType), params(parameters), body(methodBody) {}
+
+std::string MethodDef::serialize() const {
+    std::vector<std::string> paramStrings;
+    paramStrings.reserve(params.size());
+    for(auto param : params) {
+        paramStrings.push_back(param->serialize());
     }
+    return formatCall("Method", {name, formatList(paramStrings), returnType, body->serialize()});
+}
 
-    ClassAst::~ClassAst() {
-        for (auto field : fields) {
-            delete field;
-        }
-        for (auto method : methods) {
-            delete method;
-        }
+MethodDef::~MethodDef() {
+    for(auto param : params) delete param;
+    delete body;
+}
+
+// FieldDef implementation
+FieldDef::FieldDef(int line, int col, std::string fieldName, std::string fieldType, Expression* init)
+: NodeBase(line, col), name(fieldName), type(fieldType), initialValue(init) {}
+
+std::string FieldDef::serialize() const {
+    return formatCall("Field", {name, type, initialValue ? initialValue->serialize() : "<no-init>"});
+}
+
+FieldDef::~FieldDef() {
+    if(initialValue) delete initialValue;
+}
+
+// ClassDef implementation
+ClassDef::ClassDef(int line, int col, std::string className, std::string parentClass,
+                   std::vector<FieldDef*> classFields, std::vector<MethodDef*> classMethods)
+: NodeBase(line, col), name(className), parent(parentClass), fields(classFields), methods(classMethods) {}
+
+std::string ClassDef::serialize() const {
+    std::vector<std::string> fieldStrings, methodStrings;
+    fieldStrings.reserve(fields.size());
+    methodStrings.reserve(methods.size());
+    
+    for(auto field : fields) fieldStrings.push_back(field->serialize());
+    for(auto method : methods) methodStrings.push_back(method->serialize());
+    
+    return formatCall("Class", {name, parent, formatList(fieldStrings), formatList(methodStrings)});
+}
+
+ClassDef::~ClassDef() {
+    for(auto field : fields) delete field;
+    for(auto method : methods) delete method;
+}
+
+// Program implementation
+Program::Program(int line, int col, std::vector<ClassDef*> programClasses)
+: NodeBase(line, col), classes(programClasses) {}
+
+std::string Program::serialize() const {
+    std::vector<std::string> classStrings;
+    classStrings.reserve(classes.size());
+    for(auto cls : classes) {
+        classStrings.push_back(cls->serialize());
     }
+    return formatList(classStrings);
+}
 
-    FieldAst::~FieldAst() {
-        if (initExpr) {
-            delete initExpr;
-        }
-    }
-
-    MethodAst::~MethodAst() {
-        for (auto formal : formals) {
-            delete formal;
-        }
-        if (body) {
-            delete body;
-        }
-    }
-
-    // Base class virtual destructor implementation is defaulted in the header
-
-    // Derived class destructors
-    BlockExprAst::~BlockExprAst() {
-        for (auto expr : expressions) {
-            delete expr;
-        }
-    }
-
-    IfExprAst::~IfExprAst() {
-        delete condition;
-        delete thenExpr;
-        if (elseExpr) {
-            delete elseExpr;
-        }
-    }
-
-    WhileExprAst::~WhileExprAst() {
-        delete condition;
-        delete body;
-    }
-
-    LetExprAst::~LetExprAst() {
-        if (initExpr) {
-            delete initExpr;
-        }
-        delete scopeExpr;
-    }
-
-    AssignExprAst::~AssignExprAst() {
-        delete expr;
-    }
-
-    UnaryOpExprAst::~UnaryOpExprAst() {
-        delete expr;
-    }
-
-    BinaryOpExprAst::~BinaryOpExprAst() {
-        delete left;
-        delete right;
-    }
-
-    CallExprAst::~CallExprAst() {
-        delete object;
-        for (auto arg : arguments) {
-            delete arg;
-        }
-    }
-
-    NewExprAst::~NewExprAst() {}
-    ObjectIdExprAst::~ObjectIdExprAst() {}
-    SelfExprAst::~SelfExprAst() {}
-    IntegerLiteralExprAst::~IntegerLiteralExprAst() {}
-    StringLiteralExprAst::~StringLiteralExprAst() {}
-    BooleanLiteralExprAst::~BooleanLiteralExprAst() {}
-    UnitExprAst::~UnitExprAst() {}
-
-    std::string ProgramAst::getString() const
-    {
-        std::vector<std::string> classStrings;
-        classStrings.reserve(classes.size());
-        std::transform(classes.begin(), classes.end(), std::back_inserter(classStrings),
-                    [](ClassAst* cls) { return cls->getString(); });
-        return formatStringList(classStrings);
-    }
-
-    std::string ClassAst::getString() const
-    {
-        std::vector<std::string> fieldStrings;
-        fieldStrings.reserve(fields.size());
-        std::transform(fields.begin(), fields.end(), std::back_inserter(fieldStrings),
-                    [](FieldAst* field) { return field->getString(); });
-        
-        std::vector<std::string> methodStrings;
-        methodStrings.reserve(methods.size());
-        std::transform(methods.begin(), methods.end(), std::back_inserter(methodStrings),
-                    [](MethodAst* method) { return method->getString(); });
-        
-        return "Class(" + name + ", " + parent + ", " + 
-               formatStringList(fieldStrings) + ", " + 
-               formatStringList(methodStrings) + ")";
-    }
-
-    std::string FieldAst::getString() const
-    {
-        if (initExpr) {
-            return "Field(" + name + ", " + type + ", " + initExpr->getString() + ")";
-        } else {
-            return "Field(" + name + ", " + type + ")";
-        }
-    }
-
-    std::string FormalAst::getString() const
-    {
-        return name + " : " + type;
-    }
-
-    std::string MethodAst::getString() const
-    {
-        std::vector<std::string> formalStrings;
-        formalStrings.reserve(formals.size());
-        std::transform(formals.begin(), formals.end(), std::back_inserter(formalStrings),
-                    [](FormalAst* formal) { return formal->getString(); });
-        
-        return "Method(" + name + ", " + formatStringList(formalStrings) + ", " + 
-               returnType + ", " + body->getString() + ")";
-    }
-
-    std::string BlockExprAst::getString() const
-    {
-        std::vector<std::string> exprStrings;
-        exprStrings.reserve(expressions.size());
-        std::transform(expressions.begin(), expressions.end(), std::back_inserter(exprStrings),
-                    [](ExprAst* expr) { return expr->getString(); });
-        
-        return formatStringList(exprStrings);
-    }
-
-    std::string IfExprAst::getString() const
-    {
-        if (elseExpr) {
-            return "If(" + condition->getString() + ", " + 
-                   thenExpr->getString() + ", " + 
-                   elseExpr->getString() + ")";
-        } else {
-            return "If(" + condition->getString() + ", " + 
-                   thenExpr->getString() + ")";
-        }
-    }
-
-    std::string WhileExprAst::getString() const
-    {
-        return "While(" + condition->getString() + ", " + 
-               body->getString() + ")";
-    }
-
-    std::string LetExprAst::getString() const
-    {
-        if (initExpr) {
-            return "Let(" + name + ", " + type + ", " + 
-                   initExpr->getString() + ", " + 
-                   scopeExpr->getString() + ")";
-        } else {
-            return "Let(" + name + ", " + type + ", " + 
-                   scopeExpr->getString() + ")";
-        }
-    }
-
-    std::string AssignExprAst::getString() const
-    {
-        return "Assign(" + name + ", " + expr->getString() + ")";
-    }
-
-    std::string UnaryOpExprAst::getString() const
-    {
-        return "UnOp(" + op + ", " + expr->getString() + ")";
-    }
-
-    std::string BinaryOpExprAst::getString() const
-    {
-        return "BinOp(" + op + ", " + left->getString() + ", " + 
-               right->getString() + ")";
-    }
-
-    std::string CallExprAst::getString() const
-    {
-        std::vector<std::string> argStrings;
-        argStrings.reserve(arguments.size());
-        std::transform(arguments.begin(), arguments.end(), std::back_inserter(argStrings),
-                    [](ExprAst* arg) { return arg->getString(); });
-        
-        return "Call(" + object->getString() + ", " + methodName + ", " + 
-               formatStringList(argStrings) + ")";
-    }
-
-    std::string NewExprAst::getString() const
-    {
-        return "New(" + typeName + ")";
-    }
-
-    std::string ObjectIdExprAst::getString() const
-    {
-        return name;
-    }
-
-    std::string SelfExprAst::getString() const
-    {
-        return "self";
-    }
-
-    std::string IntegerLiteralExprAst::getString() const
-    {
-        return std::to_string(value);
-    }
-
-    std::string StringLiteralExprAst::getString() const
-    {
-        return escapeString(value);
-    }
-
-    std::string BooleanLiteralExprAst::getString() const
-    {
-        return value ? "true" : "false";
-    }
-
-    std::string UnitExprAst::getString() const
-    {
-        return "()";
-    }
+Program::~Program() {
+    for(auto cls : classes) delete cls;
 }
