@@ -1,0 +1,9 @@
+Here is your program's error output:
+----------------- 8< -----------------
+06-method-no-args.vsop:2:13: syntax error
+----------------- 8< -----------------
+
+Here is the expected standard output:
+----------------- 8< -----------------
+[Class(Test, Object, [], [Method(myMethod, [], int32, [0])])]
+----------------- 8< -----------------

@@ -111,7 +111,7 @@
 %type <VSOP::FormalAst*> formal
 %type <std::vector<VSOP::FormalAst*>> formal_list formals
 %type <VSOP::ExprAst*> expr block
-%type <std::vector<VSOP::ExprAst*>> expr_list args
+%type <std::vector<VSOP::ExprAst*>> expr_list args arg_list
 %type <std::string> type
 
 // Define operator precedence and associativity
@@ -424,9 +424,22 @@ args
         {
             $$ = std::vector<ExprAst*>();
         }
-    | expr_list
+    | arg_list
         {
             $$ = $1;
+        }
+    ;
+
+arg_list
+    : expr
+        {
+            $$ = std::vector<ExprAst*>();
+            $$.push_back($1);
+        }
+    | arg_list "," expr
+        {
+            $$ = $1;
+            $$.push_back($3);
         }
     ;
 
