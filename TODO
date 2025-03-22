@@ -1,0 +1,3 @@
+- Fix shift/reduce conflicts
+- Stop parsing when encountering lexer error and print its error message
+- Check if strings should be escaped when we store their value or only when we print them
