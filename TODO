@@ -1,2 +1,3 @@
-- Fix shift/reduce conflicts
-- Stop parsing when encountering lexer error and print its error message
+# Part 3
+
+# Part 4

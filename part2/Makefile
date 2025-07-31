@@ -44,5 +44,6 @@ clean:
 	@rm -f $(OBJ)
 	@rm -f lexer.cpp
 	@rm -f parser.cpp parser.hpp location.hh
+	@rm -f *.output
 
 .PHONY: clean
