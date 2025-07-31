@@ -2,7 +2,7 @@ CXX 			= clang++
 
 CXXFLAGS 		= -Wall -Wextra -Wno-unused-private-field
 
-BISONFLAGS 		= -d
+BISONFLAGS 		= -d -v
 
 EXEC			= vsopc
 
@@ -31,12 +31,10 @@ $(EXEC): $(OBJ)
 	$(CXX) -o $@ $(LDFLAGS) $(OBJ)
 
 parser.cpp: parser.y
-	bison -d $(BISONFLAGS) -o parser.cpp $^
-
-# -Wcounterexamples
+	bison $(BISONFLAGS) -o parser.cpp $^
 
 parser.hpp: parser.y
-	bison -d $(BISONFLAGS) -o parser.cpp $^
+	bison $(BISONFLAGS) -o parser.cpp $^
 
 lexer.cpp: lexer.lex
 	flex $(LEXFLAGS) -o lexer.cpp $^
