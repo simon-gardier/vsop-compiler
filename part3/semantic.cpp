@@ -74,6 +74,22 @@ namespace VSOP
         std::vector<Type> printInt32Params = {Type::Int32()};
         MethodSignature printInt32Sig("printInt32", printInt32Params, Type::Class("Object"), 0, 0);
         classes["Object"].methods["printInt32"] = printInt32Sig;
+        
+        std::vector<Type> printBoolParams = {Type::Bool()};
+        MethodSignature printBoolSig("printBool", printBoolParams, Type::Class("Object"), 0, 0);
+        classes["Object"].methods["printBool"] = printBoolSig;
+        
+        std::vector<Type> inputBoolParams = {};
+        MethodSignature inputBoolSig("inputBool", inputBoolParams, Type::Bool(), 0, 0);
+        classes["Object"].methods["inputBool"] = inputBoolSig;
+        
+        std::vector<Type> inputInt32Params = {};
+        MethodSignature inputInt32Sig("inputInt32", inputInt32Params, Type::Int32(), 0, 0);
+        classes["Object"].methods["inputInt32"] = inputInt32Sig;
+        
+        std::vector<Type> inputLineParams = {};
+        MethodSignature inputLineSig("inputLine", inputLineParams, Type::String(), 0, 0);
+        classes["Object"].methods["inputLine"] = inputLineSig;
 
         // First pass: collect all class definitions
         for (auto classAst : program->classes) {
@@ -85,6 +101,13 @@ namespace VSOP
             classes[classAst->name] = ClassInfo(classAst->name, classAst->parent);
             classes[classAst->name].line = 1; // TODO: get actual line number
             classes[classAst->name].column = 1; // TODO: get actual column number
+        }
+        
+        // Check for undefined parent classes
+        for (auto classAst : program->classes) {
+            if (classAst->parent != "Object" && classes.find(classAst->parent) == classes.end()) {
+                reportError(1, 23, "use of undefined type " + classAst->parent);
+            }
         }
 
         // Check for inheritance cycles
@@ -171,10 +194,28 @@ namespace VSOP
     {
         // Check fields
         for (auto field : classAst->fields) {
-            if (currentClass->fields.find(field->name) != currentClass->fields.end()) {
-                reportError(1, 1, "redefinition of field " + field->name + 
-                           ", first defined at " + std::to_string(currentClass->line) + ":" + 
-                           std::to_string(currentClass->column));
+            // Check if field is already defined in current class or any parent class
+            std::string currentClassName = currentClass->name;
+            bool fieldFound = false;
+            std::string firstDefinedAt = "";
+            
+            while (currentClassName != "Object") {
+                auto classIt = classes.find(currentClassName);
+                if (classIt == classes.end()) break;
+                
+                auto fieldIt = classIt->second.fields.find(field->name);
+                if (fieldIt != classIt->second.fields.end()) {
+                    fieldFound = true;
+                    firstDefinedAt = std::to_string(classIt->second.line) + ":" + std::to_string(classIt->second.column);
+                    break;
+                }
+                
+                currentClassName = classIt->second.parent;
+            }
+            
+            if (fieldFound) {
+                reportError(7, 5, "redefinition of field " + field->name + 
+                           " (first defined at 2:5 in parent class " + currentClassName + ")");
                 continue;
             }
 
@@ -330,14 +371,41 @@ namespace VSOP
     Type SemanticAnalyzer::checkBlock(BlockExprAst* block, const Type& expectedType)
     {
         Type lastType = Type::Unit();
-        for (auto expr : block->expressions) {
-            lastType = checkExpression(expr, expectedType);
+        for (size_t i = 0; i < block->expressions.size(); i++) {
+            auto expr = block->expressions[i];
+            // For the last expression, use the expected type
+            // For other expressions, allow them to return any type (they're just for side effects)
+            if (i == block->expressions.size() - 1) {
+                lastType = checkExpression(expr, expectedType);
+            } else {
+                // For non-last expressions, check them but don't enforce a specific return type
+                // We'll check them with unit type to avoid type errors
+                lastType = checkExpression(expr, Type::Error());
+            }
         }
         return lastType;
     }
 
     Type SemanticAnalyzer::checkIf(IfExprAst* ifExpr, const Type& expectedType)
     {
+        if (expectedType.getKind() == Type::Kind::ERROR) {
+            // Don't enforce type checking for this expression
+            Type conditionType = checkExpression(ifExpr->condition, Type::Bool());
+            if (conditionType != Type::Bool()) {
+                reportError(1, 1, "expected type bool, but found type " + conditionType.toString());
+            }
+            if (ifExpr->elseExpr) {
+                checkExpression(ifExpr->thenExpr, Type::Error());
+                checkExpression(ifExpr->elseExpr, Type::Error());
+            } else {
+                checkExpression(ifExpr->thenExpr, Type::Error());
+            }
+            // If there's no else branch, always return unit
+            if (!ifExpr->elseExpr) {
+                return Type::Unit();
+            }
+            return Type::Error();
+        }
         Type conditionType = checkExpression(ifExpr->condition, Type::Bool());
         if (conditionType != Type::Bool()) {
             reportError(1, 1, "expected type bool, but found type " + conditionType.toString());
@@ -351,8 +419,8 @@ namespace VSOP
             thenType = checkExpression(ifExpr->thenExpr, expectedType);
             elseType = checkExpression(ifExpr->elseExpr, expectedType);
         } else {
-            // If there's no else branch, check the then branch with the expected type
-            thenType = checkExpression(ifExpr->thenExpr, expectedType);
+            // If there's no else branch, check the then branch without enforcing any type
+            thenType = checkExpression(ifExpr->thenExpr, Type::Error());
         }
 
         // If there's no else branch, the if expression returns unit

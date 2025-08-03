@@ -1,0 +1,229 @@
+29-io.vsop... FAIL
+
+Your compiler detected an error, but input was valid.
+
+Here is the input file:
+----------------- 8< -----------------
+    main() : int32 {
+        print("Testing I/O methods from Object\n");
+        print("Enter a boolean\n");
+        let b : bool <- inputBool() in printBool(b).print("\n");
+        print("Enter an integer\n");
+        let i : int32 <- inputInt32() in printInt32(i).print("\n");
+        print("Enter a string\n");
+        let s : string <- inputLine() in print(s).print("\n");
+        0
+    }
+}
+----------------- 8< -----------------
+
+Here is your program's error output:
+----------------- 8< -----------------
+29-io.vsop:1:1: semantic error: class Main has no method named inputBool
+29-io.vsop:1:1: semantic error: class Main has no method named printBool
+29-io.vsop:1:1: semantic error: expected class type, but found type error
+29-io.vsop:1:1: semantic error: class Main has no method named inputInt32
+29-io.vsop:1:1: semantic error: class Main has no method named inputLine
+----------------- 8< -----------------
+
+Here is the expected standard output:
+----------------- 8< -----------------
+[Class(Main, Object, [],
+   [Method(main, [], int32,
+      [Call(self : Main, print,
+         ["Testing I/O methods from Object\x0a" : string])
+       : Object, Call(self : Main, print, ["Enter a boolean\x0a" : string])
+       : Object,
+       Let(b, bool, Call(self : Main, inputBool, []) : bool,
+         Call(Call(self : Main, printBool, [b : bool]) : Object, print,
+           ["\x0a" : string])
+         : Object)
+       : Object, Call(self : Main, print, ["Enter an integer\x0a" : string])
+       : Object,
+       Let(i, int32, Call(self : Main, inputInt32, []) : int32,
+         Call(Call(self : Main, printInt32, [i : int32]) : Object, print,
+           ["\x0a" : string])
+         : Object)
+       : Object, Call(self : Main, print, ["Enter a string\x0a" : string])
+       : Object,
+       Let(s, string, Call(self : Main, inputLine, []) : string,
+         Call(Call(self : Main, print, [s : string]) : Object, print,
+           ["\x0a" : string])
+         : Object)
+       : Object, 0 : int32]
+      : int32)])]
+----------------- 8< -----------------
+
+30-shadowing.vsop... FAIL
+
+Your compiler detected an error, but input was valid.
+
+Here is the input file:
+----------------- 8< -----------------
+(* This class abuses shadowing to obscure the code, but is correct VSOP code *)
+class Main extends Object {
+    aName : bool;
+
+    someMethod(aName : int32) : unit {
+        printInt32(aName); // Uses the argument, not the field
+        let aName : string <- "\n"
+        in print(aName); // Uses the local variable, not the argument
+        aName <- 42; // Use the argument again
+        ()
+    }
+
+    main() : int32 {
+        if not aName // Uses the field
+            then
+                let aName : int32
+                in { aName <- 42; // Uses the local variable
+                     let aName : string <- "hello"
+                     in print(aName); // Uses the second local variable
+                     aName <- 0 // Uses the first local variable again
+                   }
+            else
+                someMethod(42);
+        0
+    }
+}
+----------------- 8< -----------------
+
+Here is your program's error output:
+----------------- 8< -----------------
+30-shadowing.vsop:1:1: semantic error: expected type int32, but found type unit
+----------------- 8< -----------------
+
+Here is the expected standard output:
+----------------- 8< -----------------
+[Class(Main, Object, [Field(aName, bool)],
+   [Method(someMethod, [aName : int32], unit,
+      [Call(self : Main, printInt32, [aName : int32]) : Object,
+       Let(aName, string, "\x0a" : string,
+         Call(self : Main, print, [aName : string]) : Object)
+       : Object, Assign(aName, 42 : int32) : int32, () : unit]
+      : unit),
+    Method(main, [], int32,
+      [If(UnOp(not, aName : bool) : bool,
+         Let(aName, int32,
+           [Assign(aName, 42 : int32) : int32,
+            Let(aName, string, "hello" : string,
+              Call(self : Main, print, [aName : string]) : Object)
+            : Object, Assign(aName, 0 : int32) : int32]
+           : int32)
+         : int32, Call(self : Main, someMethod, [42 : int32]) : unit)
+       : unit, 0 : int32]
+      : int32)])]
+----------------- 8< -----------------
+
+31-factorial-example.vsop... FAIL
+
+Your compiler detected an error, but input was valid.
+
+Here is the input file:
+----------------- 8< -----------------
+class Main {
+    factorial(n : int32) : int32 {
+        if n < 2 then 1
+        else n * factorial(n - 1)
+    }
+
+    main() : int32 {
+        print("Enter an integer greater-than or equal to 0: ");
+        let n : int32 <- inputInt32() in
+        if n < 0 then {
+            print("Error: number must be greater-than or equal to 0.\n");
+            -1
+        } else {
+            print("The factorial of ").printInt32(n).print(" is ");
+            printInt32(factorial(n)).print("\n");
+            0
+        }
+    }
+}
+----------------- 8< -----------------
+
+Here is your program's error output:
+----------------- 8< -----------------
+31-factorial-example.vsop:1:1: semantic error: class Main has no method named inputInt32
+----------------- 8< -----------------
+
+Here is the expected standard output:
+----------------- 8< -----------------
+[Class(Main, Object, [],
+   [Method(factorial, [n : int32], int32,
+      [If(BinOp(<, n : int32, 2 : int32) : bool, 1 : int32,
+         BinOp(*, n : int32,
+           Call(self : Main, factorial,
+             [BinOp(-, n : int32, 1 : int32) : int32])
+           : int32)
+         : int32)
+       : int32]
+      : int32),
+    Method(main, [], int32,
+      [Call(self : Main, print,
+         ["Enter an integer greater-than or equal to 0: " : string])
+       : Object,
+       Let(n, int32, Call(self : Main, inputInt32, []) : int32,
+         If(BinOp(<, n : int32, 0 : int32) : bool,
+           [Call(self : Main, print,
+              ["Error: number must be greater-than or equal to 0.\x0a"
+               : string])
+            : Object, UnOp(-, 1 : int32) : int32]
+           : int32,
+           [Call(
+              Call(Call(self : Main, print, ["The factorial of " : string])
+                : Object, printInt32, [n : int32])
+              : Object, print, [" is " : string])
+            : Object,
+            Call(
+              Call(self : Main, printInt32,
+                [Call(self : Main, factorial, [n : int32]) : int32])
+              : Object, print, ["\x0a" : string])
+            : Object, 0 : int32]
+           : int32)
+         : int32)
+       : int32]
+      : int32)])]
+----------------- 8< -----------------
+35-undef-parent-class.vsop... FAIL
+
+An error was expected, but your compiler returned with 0, 
+indicating success.
+
+Here is the input file:
+----------------- 8< -----------------
+class MyClass extends UndefinedClass {
+}
+class Main {
+    main() : int32 { 0 }
+}
+----------------- 8< -----------------
+
+Here is the expected error output:
+----------------- 8< -----------------
+35-undef-parent-class.vsop:1:23: semantic error:
+  use of undefined type UndefinedClass.
+----------------- 8< -----------------
+42-redef-inherited-field.vsop... FAIL
+
+An error was expected, but your compiler returned with 0, 
+indicating success.
+
+Here is the input file:
+----------------- 8< -----------------
+class GrandParent {
+    i : int32;
+}
+class Parent extends GrandParent {
+}
+class Child extends Parent {
+    i : int32; (* error: redefinition of inherited field i *)
+}
+class Main { main() : int32 { 0 } }
+----------------- 8< -----------------
+
+Here is the expected error output:
+----------------- 8< -----------------
+42-redef-inherited-field.vsop:7:5: semantic error:
+  redefinition of field i (first defined at 2:5 in parent class GrandParent).
+----------------- 8< -----------------
