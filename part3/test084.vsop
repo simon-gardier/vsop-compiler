@@ -1,4 +1,0 @@
-class MyClass {
-    myField : unit <- 2^10;
-}
-class Main { main() : int32 { 0 } } 

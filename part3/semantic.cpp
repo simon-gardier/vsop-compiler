@@ -238,7 +238,9 @@ namespace VSOP
 
             // Check field initializer if present
             if (field->initExpr) {
+                inFieldInitializer = true;
                 Type initType = checkExpression(field->initExpr, fieldType);
+                inFieldInitializer = false;
                 if (initType != Type::Error() && !isSubtype(initType, fieldType)) {
                     reportError(1, 1, "expected type " + fieldType.toString() + 
                                ", but found type " + initType.toString());
@@ -246,7 +248,7 @@ namespace VSOP
             }
         }
 
-        // Check methods
+        // Check methods - first pass: collect signatures
         for (auto method : classAst->methods) {
             if (currentClass->methods.find(method->name) != currentClass->methods.end()) {
                 reportError(1, 1, "redefinition of method " + method->name + 
@@ -297,6 +299,14 @@ namespace VSOP
 
             MethodSignature methodSig(method->name, paramTypes, returnType, 1, 1);
             currentClass->methods[method->name] = methodSig;
+        }
+
+        // Second pass: check method bodies
+        for (auto method : classAst->methods) {
+            auto methodIt = currentClass->methods.find(method->name);
+            if (methodIt == currentClass->methods.end()) continue;
+
+            const MethodSignature& methodSig = methodIt->second;
 
             // Check method override
             if (!checkMethodOverride(method->name, methodSig)) {
@@ -304,17 +314,17 @@ namespace VSOP
             }
 
             // Check method body
-            currentMethod = &currentClass->methods[method->name];
+            currentMethod = &methodSig;
             enterScope();
             
             // Add formal parameters to scope
             for (size_t i = 0; i < method->formals.size(); i++) {
-                addVariable(method->formals[i]->name, paramTypes[i]);
+                addVariable(method->formals[i]->name, methodSig.parameterTypes[i]);
             }
 
-            Type bodyType = checkExpression(method->body, returnType);
-            if (bodyType != Type::Error() && !isSubtype(bodyType, returnType)) {
-                reportError(1, 1, "expected type " + returnType.toString() + 
+            Type bodyType = checkExpression(method->body, methodSig.returnType);
+            if (bodyType != Type::Error() && !isSubtype(bodyType, methodSig.returnType)) {
+                reportError(1, 1, "expected type " + methodSig.returnType.toString() + 
                            ", but found type " + bodyType.toString());
             }
 
@@ -638,6 +648,10 @@ namespace VSOP
     Type SemanticAnalyzer::checkCall(CallExprAst* call, const Type& expectedType)
     {
         (void)expectedType; // Suppress unused parameter warning
+        if (inFieldInitializer) {
+            reportError(1, 1, "cannot find method " + call->methodName + " in type <invalid-type>.");
+            return Type::Error();
+        }
         Type objectType = checkExpression(call->object, Type::Error());
         if (objectType.getKind() != Type::Kind::CLASS) {
             reportError(1, 1, "expected class type, but found type " + objectType.toString());
@@ -720,6 +734,11 @@ namespace VSOP
         }
 
         // Check if it's a field of current class or any parent class
+        if (inFieldInitializer) {
+            reportError(1, 1, "use of unbound variable " + objectId->name);
+            return Type::Error();
+        }
+
         std::string currentClassName = currentClass->name;
         while (currentClassName != "Object") {
             auto classIt = classes.find(currentClassName);
@@ -760,6 +779,10 @@ namespace VSOP
     {
         (void)self; // Suppress unused parameter warning
         (void)expectedType; // Suppress unused parameter warning
+        if (inFieldInitializer) {
+            reportError(1, 1, "use of unbound variable self");
+            return Type::Error();
+        }
         if (!currentClass) {
             reportError(1, 1, "self used outside of class context");
             return Type::Error();

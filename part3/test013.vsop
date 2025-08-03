@@ -1,5 +1,0 @@
-class MyClass {
-    (* if-then without else returns () *)
-    myField : bool <- () = (if true then 42);
-}
-class Main { main() : int32 { 0 } } 

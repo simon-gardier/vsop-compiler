@@ -1,4 +1,0 @@
-class MyClass {
-    myField : bool <- 17 <= 42;
-}
-class Main { main() : int32 { 0 } } 
