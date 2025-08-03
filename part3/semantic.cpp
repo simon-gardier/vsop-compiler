@@ -1,0 +1,814 @@
+/**
+ * @brief Implementation of semantic analyzer for VSOP compiler
+ */
+
+#include "semantic.hpp"
+#include <sstream>
+#include <algorithm>
+#include <iostream>
+
+namespace VSOP
+{
+    // Type implementation
+    std::string Type::toString() const
+    {
+        switch (kind)
+        {
+            case Kind::UNIT: return "unit";
+            case Kind::BOOL: return "bool";
+            case Kind::INT32: return "int32";
+            case Kind::STRING: return "string";
+            case Kind::CLASS: return className;
+            case Kind::ERROR: return "error";
+            default: return "unknown";
+        }
+    }
+
+    bool Type::operator==(const Type& other) const
+    {
+        if (kind != other.kind) return false;
+        if (kind == Kind::CLASS) return className == other.className;
+        return true;
+    }
+
+    bool Type::operator!=(const Type& other) const
+    {
+        return !(*this == other);
+    }
+
+    // Scope implementation
+    void Scope::addVariable(const std::string& name, const Type& type)
+    {
+        variables[name] = type;
+    }
+
+    Type Scope::getVariableType(const std::string& name, bool& found) const
+{
+    auto it = variables.find(name);
+    if (it != variables.end()) {
+        found = true;
+        return it->second;
+    }
+    found = false;
+    return Type::Error();
+}
+
+    bool Scope::hasVariable(const std::string& name) const
+    {
+        return variables.find(name) != variables.end();
+    }
+
+    // SemanticAnalyzer implementation
+    bool SemanticAnalyzer::analyze(ProgramAst* program)
+    {
+        // Initialize Object class (predefined)
+        classes["Object"] = ClassInfo("Object", "");
+        classes["Object"].line = 0;
+        classes["Object"].column = 0;
+        
+        // Add predefined Object methods
+        std::vector<Type> printParams = {Type::String()};
+        MethodSignature printSig("print", printParams, Type::Class("Object"), 0, 0);
+        classes["Object"].methods["print"] = printSig;
+        
+        std::vector<Type> printInt32Params = {Type::Int32()};
+        MethodSignature printInt32Sig("printInt32", printInt32Params, Type::Class("Object"), 0, 0);
+        classes["Object"].methods["printInt32"] = printInt32Sig;
+
+        // First pass: collect all class definitions
+        for (auto classAst : program->classes) {
+            if (classes.find(classAst->name) != classes.end()) {
+                reportError(classAst->name.length(), 1, "redefinition of class " + classAst->name);
+                continue;
+            }
+            
+            classes[classAst->name] = ClassInfo(classAst->name, classAst->parent);
+            classes[classAst->name].line = 1; // TODO: get actual line number
+            classes[classAst->name].column = 1; // TODO: get actual column number
+        }
+
+        // Check for inheritance cycles
+        checkInheritanceCycles();
+
+        // Second pass: analyze each class
+        for (auto classAst : program->classes) {
+            currentClass = &classes[classAst->name];
+            checkClass(classAst);
+        }
+
+        // Check for Main class and main method
+        checkMainClass();
+
+        // Generate annotated string
+        std::vector<std::string> classStrings;
+        for (auto classAst : program->classes) {
+            classStrings.push_back(classAst->getString());
+        }
+        
+        annotatedString = "[" + [&classStrings]() {
+            std::string result;
+            for (size_t i = 0; i < classStrings.size(); i++) {
+                result += classStrings[i] + (i == classStrings.size() - 1 ? "" : ", ");
+            }
+            return result;
+        }() + "]";
+
+        return !hasErrors();
+    }
+
+    void SemanticAnalyzer::reportError(int line, int column, const std::string& message)
+    {
+        std::ostringstream oss;
+        oss << filename << ":" << line << ":" << column << ": semantic error: " << message;
+        errors.push_back(oss.str());
+    }
+
+    void SemanticAnalyzer::enterScope()
+    {
+        scopes.emplace_back();
+    }
+
+    void SemanticAnalyzer::exitScope()
+    {
+        if (!scopes.empty()) {
+            scopes.pop_back();
+        }
+    }
+
+    void SemanticAnalyzer::addVariable(const std::string& name, const Type& type)
+    {
+        if (!scopes.empty()) {
+            scopes.back().addVariable(name, type);
+        }
+    }
+
+    Type SemanticAnalyzer::getVariableType(const std::string& name, bool& found)
+    {
+        // Check scopes from innermost to outermost
+        for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
+            bool scopeFound = false;
+            Type type = it->getVariableType(name, scopeFound);
+            if (scopeFound) {
+                found = true;
+                return type;
+            }
+        }
+        found = false;
+        return Type::Error();
+    }
+
+    bool SemanticAnalyzer::hasVariable(const std::string& name)
+    {
+        for (const auto& scope : scopes) {
+            if (scope.hasVariable(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Type SemanticAnalyzer::checkClass(ClassAst* classAst)
+    {
+        // Check fields
+        for (auto field : classAst->fields) {
+            if (currentClass->fields.find(field->name) != currentClass->fields.end()) {
+                reportError(1, 1, "redefinition of field " + field->name + 
+                           ", first defined at " + std::to_string(currentClass->line) + ":" + 
+                           std::to_string(currentClass->column));
+                continue;
+            }
+
+            Type fieldType = Type::Error();
+            if (field->type == "unit") fieldType = Type::Unit();
+            else if (field->type == "bool") fieldType = Type::Bool();
+            else if (field->type == "int32") fieldType = Type::Int32();
+            else if (field->type == "string") fieldType = Type::String();
+            else {
+                // Check if it's a valid class name
+                if (classes.find(field->type) == classes.end()) {
+                    reportError(1, 1, "unknown type " + field->type);
+                    fieldType = Type::Error();
+                } else {
+                    fieldType = Type::Class(field->type);
+                }
+            }
+
+            currentClass->fields[field->name] = fieldType;
+
+            // Check field initializer if present
+            if (field->initExpr) {
+                Type initType = checkExpression(field->initExpr, fieldType);
+                if (initType != Type::Error() && !isSubtype(initType, fieldType)) {
+                    reportError(1, 1, "expected type " + fieldType.toString() + 
+                               ", but found type " + initType.toString());
+                }
+            }
+        }
+
+        // Check methods
+        for (auto method : classAst->methods) {
+            if (currentClass->methods.find(method->name) != currentClass->methods.end()) {
+                reportError(1, 1, "redefinition of method " + method->name + 
+                           ", first defined at " + std::to_string(currentClass->line) + ":" + 
+                           std::to_string(currentClass->column));
+                continue;
+            }
+
+            // Check for duplicate formal parameters
+            std::set<std::string> formalNames;
+            std::vector<Type> paramTypes;
+            for (auto formal : method->formals) {
+                if (formalNames.find(formal->name) != formalNames.end()) {
+                    reportError(1, 1, "duplicate formal parameter " + formal->name);
+                    continue;
+                }
+                formalNames.insert(formal->name);
+
+                Type paramType = Type::Error();
+                if (formal->type == "unit") paramType = Type::Unit();
+                else if (formal->type == "bool") paramType = Type::Bool();
+                else if (formal->type == "int32") paramType = Type::Int32();
+                else if (formal->type == "string") paramType = Type::String();
+                else {
+                    if (classes.find(formal->type) == classes.end()) {
+                        reportError(1, 1, "unknown type " + formal->type);
+                        paramType = Type::Error();
+                    } else {
+                        paramType = Type::Class(formal->type);
+                    }
+                }
+                paramTypes.push_back(paramType);
+            }
+
+            Type returnType = Type::Error();
+            if (method->returnType == "unit") returnType = Type::Unit();
+            else if (method->returnType == "bool") returnType = Type::Bool();
+            else if (method->returnType == "int32") returnType = Type::Int32();
+            else if (method->returnType == "string") returnType = Type::String();
+            else {
+                if (classes.find(method->returnType) == classes.end()) {
+                    reportError(1, 1, "unknown type " + method->returnType);
+                    returnType = Type::Error();
+                } else {
+                    returnType = Type::Class(method->returnType);
+                }
+            }
+
+            MethodSignature methodSig(method->name, paramTypes, returnType, 1, 1);
+            currentClass->methods[method->name] = methodSig;
+
+            // Check method override
+            if (!checkMethodOverride(method->name, methodSig)) {
+                reportError(1, 1, "overriding method " + method->name + " with different type");
+            }
+
+            // Check method body
+            currentMethod = &currentClass->methods[method->name];
+            enterScope();
+            
+            // Add formal parameters to scope
+            for (size_t i = 0; i < method->formals.size(); i++) {
+                addVariable(method->formals[i]->name, paramTypes[i]);
+            }
+
+            Type bodyType = checkExpression(method->body, returnType);
+            if (bodyType != Type::Error() && !isSubtype(bodyType, returnType)) {
+                reportError(1, 1, "expected type " + returnType.toString() + 
+                           ", but found type " + bodyType.toString());
+            }
+
+            exitScope();
+        }
+
+        return Type::Unit();
+    }
+
+    Type SemanticAnalyzer::checkExpression(ExprAst* expr, const Type& expectedType)
+    {
+        Type resultType = Type::Error();
+        
+        if (auto block = dynamic_cast<BlockExprAst*>(expr)) {
+            resultType = checkBlock(block, expectedType);
+        } else if (auto ifExpr = dynamic_cast<IfExprAst*>(expr)) {
+            resultType = checkIf(ifExpr, expectedType);
+        } else if (auto whileExpr = dynamic_cast<WhileExprAst*>(expr)) {
+            resultType = checkWhile(whileExpr, expectedType);
+        } else if (auto letExpr = dynamic_cast<LetExprAst*>(expr)) {
+            resultType = checkLet(letExpr, expectedType);
+        } else if (auto assignExpr = dynamic_cast<AssignExprAst*>(expr)) {
+            resultType = checkAssign(assignExpr, expectedType);
+        } else if (auto unaryOp = dynamic_cast<UnaryOpExprAst*>(expr)) {
+            resultType = checkUnaryOp(unaryOp, expectedType);
+        } else if (auto binaryOp = dynamic_cast<BinaryOpExprAst*>(expr)) {
+            resultType = checkBinaryOp(binaryOp, expectedType);
+        } else if (auto call = dynamic_cast<CallExprAst*>(expr)) {
+            resultType = checkCall(call, expectedType);
+        } else if (auto newExpr = dynamic_cast<NewExprAst*>(expr)) {
+            resultType = checkNew(newExpr, expectedType);
+        } else if (auto objectId = dynamic_cast<ObjectIdExprAst*>(expr)) {
+            resultType = checkObjectId(objectId, expectedType);
+        } else if (auto self = dynamic_cast<SelfExprAst*>(expr)) {
+            resultType = checkSelf(self, expectedType);
+        } else if (auto intLit = dynamic_cast<IntegerLiteralExprAst*>(expr)) {
+            resultType = checkIntegerLiteral(intLit, expectedType);
+        } else if (auto strLit = dynamic_cast<StringLiteralExprAst*>(expr)) {
+            resultType = checkStringLiteral(strLit, expectedType);
+        } else if (auto boolLit = dynamic_cast<BooleanLiteralExprAst*>(expr)) {
+            resultType = checkBooleanLiteral(boolLit, expectedType);
+        } else if (auto unitLit = dynamic_cast<UnitExprAst*>(expr)) {
+            resultType = checkUnitLiteral(unitLit, expectedType);
+        }
+
+        // Set type information on the AST node
+        if (resultType != Type::Error()) {
+            expr->setType(resultType.toString());
+        }
+
+        return resultType;
+    }
+
+    Type SemanticAnalyzer::checkBlock(BlockExprAst* block, const Type& expectedType)
+    {
+        Type lastType = Type::Unit();
+        for (auto expr : block->expressions) {
+            lastType = checkExpression(expr, expectedType);
+        }
+        return lastType;
+    }
+
+    Type SemanticAnalyzer::checkIf(IfExprAst* ifExpr, const Type& expectedType)
+    {
+        Type conditionType = checkExpression(ifExpr->condition, Type::Bool());
+        if (conditionType != Type::Bool()) {
+            reportError(1, 1, "expected type bool, but found type " + conditionType.toString());
+        }
+
+        Type thenType = checkExpression(ifExpr->thenExpr, expectedType);
+        Type elseType = Type::Unit();
+        
+        if (ifExpr->elseExpr) {
+            elseType = checkExpression(ifExpr->elseExpr, expectedType);
+        }
+
+        if (thenType != Type::Error() && elseType != Type::Error()) {
+            if (thenType != elseType) {
+                reportError(1, 1, "expected type " + thenType.toString() + 
+                           ", but found type " + elseType.toString());
+            }
+        }
+
+        return thenType;
+    }
+
+    Type SemanticAnalyzer::checkWhile(WhileExprAst* whileExpr, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        Type conditionType = checkExpression(whileExpr->condition, Type::Bool());
+        if (conditionType != Type::Bool()) {
+            reportError(1, 1, "expected type bool, but found type " + conditionType.toString());
+        }
+
+        checkExpression(whileExpr->body, Type::Unit());
+        return Type::Unit();
+    }
+
+    Type SemanticAnalyzer::checkLet(LetExprAst* letExpr, const Type& expectedType)
+    {
+        Type declaredType = Type::Error();
+        if (letExpr->type == "unit") declaredType = Type::Unit();
+        else if (letExpr->type == "bool") declaredType = Type::Bool();
+        else if (letExpr->type == "int32") declaredType = Type::Int32();
+        else if (letExpr->type == "string") declaredType = Type::String();
+        else {
+            if (classes.find(letExpr->type) == classes.end()) {
+                reportError(1, 1, "unknown type " + letExpr->type);
+                declaredType = Type::Error();
+            } else {
+                declaredType = Type::Class(letExpr->type);
+            }
+        }
+
+        Type initType = Type::Unit();
+        if (letExpr->initExpr) {
+            initType = checkExpression(letExpr->initExpr, declaredType);
+            if (initType != Type::Error() && !isSubtype(initType, declaredType)) {
+                reportError(1, 1, "expected type " + declaredType.toString() + 
+                           ", but found type " + initType.toString());
+            }
+        }
+
+        enterScope();
+        addVariable(letExpr->name, declaredType);
+        Type scopeType = checkExpression(letExpr->scopeExpr, expectedType);
+        exitScope();
+
+        return scopeType;
+    }
+
+    Type SemanticAnalyzer::checkAssign(AssignExprAst* assign, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        // Check if the variable exists in current scope or is a field
+        Type varType = Type::Error();
+        
+        // Check local variables first
+        bool found = false;
+        Type localType = getVariableType(assign->name, found);
+        if (found) {
+            varType = localType;
+        } else {
+            // Check if it's a field of current class
+            auto fieldIt = currentClass->fields.find(assign->name);
+            if (fieldIt != currentClass->fields.end()) {
+                varType = fieldIt->second;
+            } else {
+                reportError(1, 1, "undefined variable " + assign->name);
+                return Type::Error();
+            }
+        }
+
+        Type exprType = checkExpression(assign->expr, varType);
+        if (exprType != Type::Error() && !isSubtype(exprType, varType)) {
+            reportError(1, 1, "expected type " + varType.toString() + 
+                       ", but found type " + exprType.toString());
+        }
+
+        return varType;
+    }
+
+    Type SemanticAnalyzer::checkUnaryOp(UnaryOpExprAst* unaryOp, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        if (unaryOp->op == "not") {
+            Type exprType = checkExpression(unaryOp->expr, Type::Bool());
+            if (exprType != Type::Bool()) {
+                reportError(1, 1, "expected type bool, but found type " + exprType.toString());
+                return Type::Error();
+            }
+            return Type::Bool();
+        } else if (unaryOp->op == "isnull") {
+            Type exprType = checkExpression(unaryOp->expr, Type::Error());
+            if (exprType.getKind() != Type::Kind::CLASS) {
+                reportError(1, 1, "expected class type, but found type " + exprType.toString());
+                return Type::Error();
+            }
+            return Type::Bool();
+        }
+
+        return Type::Error();
+    }
+
+    Type SemanticAnalyzer::checkBinaryOp(BinaryOpExprAst* binaryOp, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        if (binaryOp->op == "+" || binaryOp->op == "-" || binaryOp->op == "*" || binaryOp->op == "/") {
+            Type leftType = checkExpression(binaryOp->left, Type::Int32());
+            Type rightType = checkExpression(binaryOp->right, Type::Int32());
+            
+            if (leftType != Type::Int32()) {
+                reportError(1, 1, "expected type int32, but found type " + leftType.toString());
+                return Type::Error();
+            }
+            if (rightType != Type::Int32()) {
+                reportError(1, 1, "expected type int32, but found type " + rightType.toString());
+                return Type::Error();
+            }
+            
+            return Type::Int32();
+        } else if (binaryOp->op == "=" || binaryOp->op == "<") {
+            Type leftType = checkExpression(binaryOp->left, Type::Error());
+            Type rightType = checkExpression(binaryOp->right, Type::Error());
+            
+            if (leftType != rightType) {
+                reportError(1, 1, "type mismatch: " + leftType.toString() + " and " + rightType.toString());
+                return Type::Error();
+            }
+            
+            return Type::Bool();
+        } else if (binaryOp->op == "&" || binaryOp->op == "|") {
+            Type leftType = checkExpression(binaryOp->left, Type::Bool());
+            Type rightType = checkExpression(binaryOp->right, Type::Bool());
+            
+            if (leftType != Type::Bool()) {
+                reportError(1, 1, "expected type bool, but found type " + leftType.toString());
+                return Type::Error();
+            }
+            if (rightType != Type::Bool()) {
+                reportError(1, 1, "expected type bool, but found type " + rightType.toString());
+                return Type::Error();
+            }
+            
+            return Type::Bool();
+        }
+
+        return Type::Error();
+    }
+
+    Type SemanticAnalyzer::checkCall(CallExprAst* call, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        Type objectType = checkExpression(call->object, Type::Error());
+        if (objectType.getKind() != Type::Kind::CLASS) {
+            reportError(1, 1, "expected class type, but found type " + objectType.toString());
+            return Type::Error();
+        }
+
+        // Find the class and method by traversing inheritance hierarchy
+        std::string currentClassName = objectType.getClassName();
+        const MethodSignature* methodSig = nullptr;
+        
+        while (currentClassName != "Object") {
+            auto classIt = classes.find(currentClassName);
+            if (classIt == classes.end()) {
+                reportError(1, 1, "unknown class " + currentClassName);
+                return Type::Error();
+            }
+            
+            auto methodIt = classIt->second.methods.find(call->methodName);
+            if (methodIt != classIt->second.methods.end()) {
+                methodSig = &methodIt->second;
+                break;
+            }
+            
+            currentClassName = classIt->second.parent;
+        }
+        
+        // Check Object class as well
+        if (!methodSig) {
+            auto objectIt = classes.find("Object");
+            if (objectIt != classes.end()) {
+                auto methodIt = objectIt->second.methods.find(call->methodName);
+                if (methodIt != objectIt->second.methods.end()) {
+                    methodSig = &methodIt->second;
+                }
+            }
+        }
+        
+        if (!methodSig) {
+            reportError(1, 1, "class " + objectType.getClassName() + " has no method named " + call->methodName);
+            return Type::Error();
+        }
+
+        // Check arguments
+        if (call->arguments.size() != methodSig->parameterTypes.size()) {
+            reportError(1, 1, "method " + call->methodName + " expects " + 
+                       std::to_string(methodSig->parameterTypes.size()) + " arguments, but got " + 
+                       std::to_string(call->arguments.size()));
+            return Type::Error();
+        }
+
+        for (size_t i = 0; i < call->arguments.size(); i++) {
+            Type argType = checkExpression(call->arguments[i], methodSig->parameterTypes[i]);
+            if (argType != Type::Error() && !isSubtype(argType, methodSig->parameterTypes[i])) {
+                reportError(1, 1, "expected type " + methodSig->parameterTypes[i].toString() + 
+                           ", but found type " + argType.toString());
+            }
+        }
+
+        return methodSig->returnType;
+    }
+
+    Type SemanticAnalyzer::checkNew(NewExprAst* newExpr, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        if (classes.find(newExpr->typeName) == classes.end()) {
+            reportError(1, 1, "unknown type " + newExpr->typeName);
+            return Type::Error();
+        }
+        return Type::Class(newExpr->typeName);
+    }
+
+    Type SemanticAnalyzer::checkObjectId(ObjectIdExprAst* objectId, const Type& expectedType)
+    {
+        (void)expectedType; // Suppress unused parameter warning
+        // Check local variables first
+        bool found = false;
+        Type localType = getVariableType(objectId->name, found);
+        if (found) {
+            return localType;
+        }
+
+        // Check if it's a field of current class
+        auto fieldIt = currentClass->fields.find(objectId->name);
+        if (fieldIt != currentClass->fields.end()) {
+            return fieldIt->second;
+        }
+
+        // Check formal parameters
+        if (currentMethod) {
+            for (size_t i = 0; i < currentMethod->parameterTypes.size(); i++) {
+                // TODO: match with actual formal parameter names
+            }
+        }
+
+        reportError(1, 1, "undefined variable " + objectId->name);
+        return Type::Error();
+    }
+
+    Type SemanticAnalyzer::checkSelf(SelfExprAst* self, const Type& expectedType)
+    {
+        (void)self; // Suppress unused parameter warning
+        (void)expectedType; // Suppress unused parameter warning
+        if (!currentClass) {
+            reportError(1, 1, "self used outside of class context");
+            return Type::Error();
+        }
+        return Type::Class(currentClass->name);
+    }
+
+    Type SemanticAnalyzer::checkIntegerLiteral(IntegerLiteralExprAst* literal, const Type& expectedType)
+    {
+        (void)literal; // Suppress unused parameter warning
+        (void)expectedType; // Suppress unused parameter warning
+        return Type::Int32();
+    }
+
+    Type SemanticAnalyzer::checkStringLiteral(StringLiteralExprAst* literal, const Type& expectedType)
+    {
+        (void)literal; // Suppress unused parameter warning
+        (void)expectedType; // Suppress unused parameter warning
+        return Type::String();
+    }
+
+    Type SemanticAnalyzer::checkBooleanLiteral(BooleanLiteralExprAst* literal, const Type& expectedType)
+    {
+        (void)literal; // Suppress unused parameter warning
+        (void)expectedType; // Suppress unused parameter warning
+        return Type::Bool();
+    }
+
+    Type SemanticAnalyzer::checkUnitLiteral(UnitExprAst* literal, const Type& expectedType)
+    {
+        (void)literal; // Suppress unused parameter warning
+        (void)expectedType; // Suppress unused parameter warning
+        return Type::Unit();
+    }
+
+    bool SemanticAnalyzer::isSubtype(const Type& subtype, const Type& supertype)
+    {
+        if (subtype == supertype) return true;
+        if (subtype.getKind() == Type::Kind::CLASS && supertype.getKind() == Type::Kind::CLASS) {
+            // Check inheritance hierarchy
+            std::string currentClass = subtype.getClassName();
+            while (currentClass != "Object") {
+                auto it = classes.find(currentClass);
+                if (it == classes.end()) break;
+                if (it->second.parent == supertype.getClassName()) return true;
+                currentClass = it->second.parent;
+            }
+        }
+        return false;
+    }
+
+    std::string SemanticAnalyzer::getCommonSupertype(const Type& type1, const Type& type2)
+    {
+        if (type1 == type2) return type1.toString();
+        if (type1.getKind() == Type::Kind::CLASS && type2.getKind() == Type::Kind::CLASS) {
+            // Find common ancestor in inheritance hierarchy
+            std::set<std::string> ancestors1;
+            std::string current = type1.getClassName();
+            while (current != "Object") {
+                ancestors1.insert(current);
+                auto it = classes.find(current);
+                if (it == classes.end()) break;
+                current = it->second.parent;
+            }
+            ancestors1.insert("Object");
+
+            current = type2.getClassName();
+            while (current != "Object") {
+                if (ancestors1.find(current) != ancestors1.end()) {
+                    return current;
+                }
+                auto it = classes.find(current);
+                if (it == classes.end()) break;
+                current = it->second.parent;
+            }
+            if (ancestors1.find("Object") != ancestors1.end()) {
+                return "Object";
+            }
+        }
+        return "Object"; // Default fallback
+    }
+
+    bool SemanticAnalyzer::checkMethodOverride(const std::string& methodName, const MethodSignature& newSig)
+    {
+        std::string currentClass = this->currentClass->parent;
+        while (currentClass != "Object") {
+            auto it = classes.find(currentClass);
+            if (it == classes.end()) break;
+            
+            auto methodIt = it->second.methods.find(methodName);
+            if (methodIt != it->second.methods.end()) {
+                const MethodSignature& parentSig = methodIt->second;
+                
+                // Check return type
+                if (!isSubtype(newSig.returnType, parentSig.returnType)) {
+                    return false;
+                }
+                
+                // Check parameter types
+                if (newSig.parameterTypes.size() != parentSig.parameterTypes.size()) {
+                    return false;
+                }
+                
+                for (size_t i = 0; i < newSig.parameterTypes.size(); i++) {
+                    if (newSig.parameterTypes[i] != parentSig.parameterTypes[i]) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            currentClass = it->second.parent;
+        }
+        
+        return true; // No parent method to override
+    }
+
+    void SemanticAnalyzer::checkInheritanceCycles()
+    {
+        std::set<std::string> visited;
+        std::set<std::string> recursionStack;
+
+        for (const auto& classPair : classes) {
+            if (visited.find(classPair.first) == visited.end()) {
+                if (hasCycle(classPair.first, visited, recursionStack)) {
+                    reportError(1, 1, "inheritance cycle detected involving class " + classPair.first);
+                }
+            }
+        }
+    }
+
+    bool SemanticAnalyzer::hasCycle(const std::string& className, std::set<std::string>& visited, 
+                                   std::set<std::string>& recursionStack)
+    {
+        visited.insert(className);
+        recursionStack.insert(className);
+
+        auto it = classes.find(className);
+        if (it != classes.end()) {
+            std::string parent = it->second.parent;
+            if (parent != "Object") {
+                if (recursionStack.find(parent) != recursionStack.end()) {
+                    return true;
+                }
+                if (visited.find(parent) == visited.end()) {
+                    if (hasCycle(parent, visited, recursionStack)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        recursionStack.erase(className);
+        return false;
+    }
+
+    void SemanticAnalyzer::checkMainClass()
+    {
+        auto mainClassIt = classes.find("Main");
+        if (mainClassIt == classes.end()) {
+            reportError(1, 1, "no class Main");
+            return;
+        }
+
+        auto mainMethodIt = mainClassIt->second.methods.find("main");
+        if (mainMethodIt == mainClassIt->second.methods.end()) {
+            reportError(1, 1, "class Main has no main method");
+            return;
+        }
+
+        const MethodSignature& mainSig = mainMethodIt->second;
+        if (mainSig.parameterTypes.size() != 0 || mainSig.returnType != Type::Int32()) {
+            reportError(1, 1, "main method must have signature main() : int32");
+        }
+    }
+
+    // String generation methods
+    std::string SemanticAnalyzer::getAnnotatedString(ExprAst* expr)
+    {
+        return expr->getString(); // Type information is already included in the AST
+    }
+
+    std::string SemanticAnalyzer::getAnnotatedString(ClassAst* classAst)
+    {
+        return classAst->getString(); // Type information is already included in the AST
+    }
+
+    std::string SemanticAnalyzer::getAnnotatedString(FieldAst* fieldAst)
+    {
+        return fieldAst->getString();
+    }
+
+    std::string SemanticAnalyzer::getAnnotatedString(MethodAst* methodAst)
+    {
+        return methodAst->getString();
+    }
+
+    std::string SemanticAnalyzer::getAnnotatedString(FormalAst* formalAst)
+    {
+        return formalAst->getString();
+    }
+} 
