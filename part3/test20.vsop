@@ -1,0 +1,4 @@
+class MyClass {
+    myMethod(i : int32, b : bool) : bool { i = 42 and b }
+}
+class Main { main() : int32 { 0 } } 

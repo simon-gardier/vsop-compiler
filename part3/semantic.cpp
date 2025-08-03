@@ -343,18 +343,46 @@ namespace VSOP
             reportError(1, 1, "expected type bool, but found type " + conditionType.toString());
         }
 
-        Type thenType = checkExpression(ifExpr->thenExpr, expectedType);
+        Type thenType;
         Type elseType = Type::Unit();
         
         if (ifExpr->elseExpr) {
+            // If there's an else branch, check both branches with the same expected type
+            thenType = checkExpression(ifExpr->thenExpr, expectedType);
             elseType = checkExpression(ifExpr->elseExpr, expectedType);
+        } else {
+            // If there's no else branch, check the then branch with the expected type
+            thenType = checkExpression(ifExpr->thenExpr, expectedType);
         }
 
-        if (thenType != Type::Error() && elseType != Type::Error()) {
-            if (thenType != elseType) {
-                reportError(1, 1, "expected type " + thenType.toString() + 
-                           ", but found type " + elseType.toString());
-            }
+        // If there's no else branch, the if expression returns unit
+        if (!ifExpr->elseExpr) {
+            return Type::Unit();
+        }
+
+        // If both branches have the same type, return that type
+        if (thenType == elseType) {
+            return thenType;
+        }
+
+        // If types are different, find the common supertype
+        if (thenType.getKind() == Type::Kind::CLASS && elseType.getKind() == Type::Kind::CLASS) {
+            std::string commonType = getCommonSupertype(thenType, elseType);
+            return Type::Class(commonType);
+        }
+
+        // Check if one type is a subtype of the other
+        if (isSubtype(thenType, elseType)) {
+            return elseType;
+        }
+        if (isSubtype(elseType, thenType)) {
+            return thenType;
+        }
+
+        // For non-class types, they must be the same
+        if (thenType != elseType) {
+            reportError(1, 1, "expected type " + thenType.toString() + 
+                       ", but found type " + elseType.toString());
         }
 
         return thenType;
@@ -417,11 +445,37 @@ namespace VSOP
         if (found) {
             varType = localType;
         } else {
-            // Check if it's a field of current class
-            auto fieldIt = currentClass->fields.find(assign->name);
-            if (fieldIt != currentClass->fields.end()) {
-                varType = fieldIt->second;
-            } else {
+            // Check if it's a field of current class or any parent class
+            std::string currentClassName = currentClass->name;
+            bool fieldFound = false;
+            
+            while (currentClassName != "Object") {
+                auto classIt = classes.find(currentClassName);
+                if (classIt == classes.end()) break;
+                
+                auto fieldIt = classIt->second.fields.find(assign->name);
+                if (fieldIt != classIt->second.fields.end()) {
+                    varType = fieldIt->second;
+                    fieldFound = true;
+                    break;
+                }
+                
+                currentClassName = classIt->second.parent;
+            }
+            
+            // Check Object class as well
+            if (!fieldFound) {
+                auto objectIt = classes.find("Object");
+                if (objectIt != classes.end()) {
+                    auto fieldIt = objectIt->second.fields.find(assign->name);
+                    if (fieldIt != objectIt->second.fields.end()) {
+                        varType = fieldIt->second;
+                        fieldFound = true;
+                    }
+                }
+            }
+            
+            if (!fieldFound) {
                 reportError(1, 1, "undefined variable " + assign->name);
                 return Type::Error();
             }
@@ -453,6 +507,13 @@ namespace VSOP
                 return Type::Error();
             }
             return Type::Bool();
+        } else if (unaryOp->op == "-") {
+            Type exprType = checkExpression(unaryOp->expr, Type::Int32());
+            if (exprType != Type::Int32()) {
+                reportError(1, 1, "expected type int32, but found type " + exprType.toString());
+                return Type::Error();
+            }
+            return Type::Int32();
         }
 
         return Type::Error();
@@ -475,7 +536,7 @@ namespace VSOP
             }
             
             return Type::Int32();
-        } else if (binaryOp->op == "=" || binaryOp->op == "<") {
+        } else if (binaryOp->op == "=" || binaryOp->op == "<" || binaryOp->op == "<=") {
             Type leftType = checkExpression(binaryOp->left, Type::Error());
             Type rightType = checkExpression(binaryOp->right, Type::Error());
             
@@ -485,7 +546,7 @@ namespace VSOP
             }
             
             return Type::Bool();
-        } else if (binaryOp->op == "&" || binaryOp->op == "|") {
+        } else if (binaryOp->op == "&" || binaryOp->op == "|" || binaryOp->op == "and" || binaryOp->op == "or") {
             Type leftType = checkExpression(binaryOp->left, Type::Bool());
             Type rightType = checkExpression(binaryOp->right, Type::Bool());
             
@@ -588,17 +649,37 @@ namespace VSOP
             return localType;
         }
 
-        // Check if it's a field of current class
-        auto fieldIt = currentClass->fields.find(objectId->name);
-        if (fieldIt != currentClass->fields.end()) {
-            return fieldIt->second;
+        // Check if it's a field of current class or any parent class
+        std::string currentClassName = currentClass->name;
+        while (currentClassName != "Object") {
+            auto classIt = classes.find(currentClassName);
+            if (classIt == classes.end()) break;
+            
+            auto fieldIt = classIt->second.fields.find(objectId->name);
+            if (fieldIt != classIt->second.fields.end()) {
+                return fieldIt->second;
+            }
+            
+            currentClassName = classIt->second.parent;
+        }
+        
+        // Check Object class as well
+        auto objectIt = classes.find("Object");
+        if (objectIt != classes.end()) {
+            auto fieldIt = objectIt->second.fields.find(objectId->name);
+            if (fieldIt != objectIt->second.fields.end()) {
+                return fieldIt->second;
+            }
         }
 
         // Check formal parameters
         if (currentMethod) {
-            for (size_t i = 0; i < currentMethod->parameterTypes.size(); i++) {
-                // TODO: match with actual formal parameter names
-            }
+            // We need to get the actual formal parameter names from the AST
+            // For now, we'll assume the parameter names match the order
+            // This is a simplified approach - in a real implementation,
+            // we'd need to store parameter names in MethodSignature
+            // Since we can't easily access the original AST here,
+            // we'll skip this check for now and rely on the scope system
         }
 
         reportError(1, 1, "undefined variable " + objectId->name);
@@ -651,11 +732,13 @@ namespace VSOP
             // Check inheritance hierarchy
             std::string currentClass = subtype.getClassName();
             while (currentClass != "Object") {
+                if (currentClass == supertype.getClassName()) return true;
                 auto it = classes.find(currentClass);
                 if (it == classes.end()) break;
-                if (it->second.parent == supertype.getClassName()) return true;
                 currentClass = it->second.parent;
             }
+            // Check if we reached Object
+            if (currentClass == "Object" && supertype.getClassName() == "Object") return true;
         }
         return false;
     }
@@ -667,13 +750,13 @@ namespace VSOP
             // Find common ancestor in inheritance hierarchy
             std::set<std::string> ancestors1;
             std::string current = type1.getClassName();
+            ancestors1.insert(current); // Include the starting class
             while (current != "Object") {
-                ancestors1.insert(current);
                 auto it = classes.find(current);
                 if (it == classes.end()) break;
                 current = it->second.parent;
+                ancestors1.insert(current);
             }
-            ancestors1.insert("Object");
 
             current = type2.getClassName();
             while (current != "Object") {
@@ -684,7 +767,8 @@ namespace VSOP
                 if (it == classes.end()) break;
                 current = it->second.parent;
             }
-            if (ancestors1.find("Object") != ancestors1.end()) {
+            // Check if type2 itself is Object or if Object is a common ancestor
+            if (type2.getClassName() == "Object" || ancestors1.find("Object") != ancestors1.end()) {
                 return "Object";
             }
         }
