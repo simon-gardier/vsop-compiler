@@ -361,7 +361,7 @@ namespace VSOP
         }
 
         // Set type information on the AST node
-        if (resultType != Type::Error()) {
+        if (resultType != Type::Error() || (dynamic_cast<IfExprAst*>(expr) && resultType == Type::Unit())) {
             expr->setType(resultType.toString());
         }
 
@@ -373,16 +373,18 @@ namespace VSOP
         Type lastType = Type::Unit();
         for (size_t i = 0; i < block->expressions.size(); i++) {
             auto expr = block->expressions[i];
-            // For the last expression, use the expected type
-            // For other expressions, allow them to return any type (they're just for side effects)
             if (i == block->expressions.size() - 1) {
                 lastType = checkExpression(expr, expectedType);
             } else {
-                // For non-last expressions, check them but don't enforce a specific return type
-                // We'll check them with unit type to avoid type errors
                 lastType = checkExpression(expr, Type::Error());
             }
         }
+        // If this block is used as a statement (expectedType == Error), set its type to unit
+        if (expectedType.getKind() == Type::Kind::ERROR) {
+            block->setType("unit");
+            return Type::Unit();
+        }
+        block->setType(lastType.toString());
         return lastType;
     }
 
@@ -590,7 +592,7 @@ namespace VSOP
     Type SemanticAnalyzer::checkBinaryOp(BinaryOpExprAst* binaryOp, const Type& expectedType)
     {
         (void)expectedType; // Suppress unused parameter warning
-        if (binaryOp->op == "+" || binaryOp->op == "-" || binaryOp->op == "*" || binaryOp->op == "/") {
+        if (binaryOp->op == "+" || binaryOp->op == "-" || binaryOp->op == "*" || binaryOp->op == "/" || binaryOp->op == "^") {
             Type leftType = checkExpression(binaryOp->left, Type::Int32());
             Type rightType = checkExpression(binaryOp->right, Type::Int32());
             
