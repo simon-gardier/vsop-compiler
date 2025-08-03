@@ -371,8 +371,13 @@ namespace VSOP
         }
 
         // Set type information on the AST node
-        if (resultType != Type::Error() || (dynamic_cast<IfExprAst*>(expr) && resultType == Type::Unit())) {
+        if (resultType != Type::Error()) {
             expr->setType(resultType.toString());
+        } else if (auto ifExpr = dynamic_cast<IfExprAst*>(expr)) {
+            // Special case: if expressions without else should always be annotated as unit
+            if (!ifExpr->elseExpr) {
+                expr->setType("unit");
+            }
         }
 
         return resultType;
@@ -401,22 +406,50 @@ namespace VSOP
     Type SemanticAnalyzer::checkIf(IfExprAst* ifExpr, const Type& expectedType)
     {
         if (expectedType.getKind() == Type::Kind::ERROR) {
-            // Don't enforce type checking for this expression
+            // No expected type, check branches independently
             Type conditionType = checkExpression(ifExpr->condition, Type::Bool());
             if (conditionType != Type::Bool()) {
                 reportError(1, 1, "expected type bool, but found type " + conditionType.toString());
             }
-            if (ifExpr->elseExpr) {
-                checkExpression(ifExpr->thenExpr, Type::Error());
-                checkExpression(ifExpr->elseExpr, Type::Error());
-            } else {
-                checkExpression(ifExpr->thenExpr, Type::Error());
+            
+            Type thenType = checkExpression(ifExpr->thenExpr, Type::Error());
+            Type elseType = ifExpr->elseExpr ? checkExpression(ifExpr->elseExpr, Type::Error()) : Type::Unit();
+            
+            // Find common supertype
+            if (thenType == elseType) {
+                ifExpr->setType(thenType.toString());
+                return thenType;
             }
-            // If there's no else branch, always return unit
-            if (!ifExpr->elseExpr) {
-                return Type::Unit();
+            
+            if (thenType.getKind() == Type::Kind::CLASS && elseType.getKind() == Type::Kind::CLASS) {
+                std::string commonType = getCommonSupertype(thenType, elseType);
+                ifExpr->setType(commonType);
+                return Type::Class(commonType);
             }
-            return Type::Error();
+            
+            if (isSubtype(thenType, elseType)) {
+                ifExpr->setType(elseType.toString());
+                return elseType;
+            }
+            if (isSubtype(elseType, thenType)) {
+                ifExpr->setType(thenType.toString());
+                return thenType;
+            }
+            
+            // For non-class types, they must be the same
+            if (thenType != elseType) {
+                // Special case: if one branch is unit, the result should be unit
+                if (thenType == Type::Unit() || elseType == Type::Unit()) {
+                    ifExpr->setType("unit");
+                    return Type::Unit();
+                }
+                
+                reportError(1, 1, "expected type " + thenType.toString() + 
+                           ", but found type " + elseType.toString());
+            }
+            
+            ifExpr->setType(thenType.toString());
+            return thenType;
         }
         Type conditionType = checkExpression(ifExpr->condition, Type::Bool());
         if (conditionType != Type::Bool()) {
@@ -437,25 +470,32 @@ namespace VSOP
 
         // If there's no else branch, the if expression returns unit
         if (!ifExpr->elseExpr) {
+            ifExpr->setType("unit");
             return Type::Unit();
         }
 
         // If both branches have the same type, return that type
         if (thenType == elseType) {
+            ifExpr->setType(thenType.toString());
             return thenType;
         }
 
         // If types are different, find the common supertype
         if (thenType.getKind() == Type::Kind::CLASS && elseType.getKind() == Type::Kind::CLASS) {
             std::string commonType = getCommonSupertype(thenType, elseType);
+            ifExpr->setType(commonType);
             return Type::Class(commonType);
         }
 
         // Check if one type is a subtype of the other
         if (isSubtype(thenType, elseType)) {
+            ifExpr->setType(elseType.toString());
+            std::cerr << "DEBUG: Set if type to " << elseType.toString() << std::endl;
             return elseType;
         }
         if (isSubtype(elseType, thenType)) {
+            ifExpr->setType(thenType.toString());
+            std::cerr << "DEBUG: Set if type to " << thenType.toString() << std::endl;
             return thenType;
         }
 
@@ -465,6 +505,7 @@ namespace VSOP
                        ", but found type " + elseType.toString());
         }
 
+        ifExpr->setType(thenType.toString());
         return thenType;
     }
 
@@ -507,7 +548,8 @@ namespace VSOP
 
         enterScope();
         addVariable(letExpr->name, declaredType);
-        Type scopeType = checkExpression(letExpr->scopeExpr, expectedType);
+        // Pass the declared type as the expected type for the scope expression
+        Type scopeType = checkExpression(letExpr->scopeExpr, declaredType);
         exitScope();
 
         return scopeType;

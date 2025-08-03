@@ -3,6 +3,7 @@
  */
 
 #include "ast.hpp"
+#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <iomanip>
