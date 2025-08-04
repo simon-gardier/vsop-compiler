@@ -1,8 +1,0 @@
-class Main {
-    main(): int32 {
-        declaredBelow()
-    }
-    declaredBelow(): int32 {
-        0
-    }
-} 
