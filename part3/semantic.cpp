@@ -142,7 +142,7 @@ namespace VSOP
     void SemanticAnalyzer::reportError(int line, int column, const std::string& message)
     {
         std::ostringstream oss;
-        oss << filename << ":" << line << ":" << column << ": semantic error: " << message;
+        oss << filename << ":" << line << ":" << column << ": semantic error:\n  " << message;
         errors.push_back(oss.str());
     }
 
@@ -239,9 +239,11 @@ namespace VSOP
             // Check field initializer if present
             if (field->initExpr) {
                 inFieldInitializer = true;
+                fieldInitializerError = false;  // Reset error flag
                 Type initType = checkExpression(field->initExpr, fieldType);
                 inFieldInitializer = false;
-                if (initType != Type::Error() && !isSubtype(initType, fieldType)) {
+                // Only report type mismatch if we didn't already report field initializer errors
+                if (!fieldInitializerError && initType != Type::Error() && !isSubtype(initType, fieldType)) {
                     reportError(1, 1, "expected type " + fieldType.toString() + 
                                ", but found type " + initType.toString());
                 }
@@ -715,6 +717,19 @@ namespace VSOP
     Type SemanticAnalyzer::checkCall(CallExprAst* call, const Type& expectedType)
     {
         (void)expectedType; // Suppress unused parameter warning
+        
+        // Check if we're in a field initializer and the call is on self
+        if (inFieldInitializer) {
+            auto selfExpr = dynamic_cast<SelfExprAst*>(call->object);
+            if (selfExpr) {
+                fieldInitializerError = true;
+                reportError(1, 1, "cannot find method " + call->methodName + " in type <invalid-type>.");
+                reportError(1, 1, "cannot use self in field initializer.");
+                reportError(1, 1, "use of unbound variable self");
+                return Type::Error();
+            }
+        }
+        
         Type objectType = checkExpression(call->object, Type::Error());
         if (objectType.getKind() != Type::Kind::CLASS) {
             reportError(1, 1, "expected class type, but found type " + objectType.toString());
@@ -789,6 +804,39 @@ namespace VSOP
     Type SemanticAnalyzer::checkObjectId(ObjectIdExprAst* objectId, const Type& expectedType)
     {
         (void)expectedType; // Suppress unused parameter warning
+        
+        // Check if we're in a field initializer
+        if (inFieldInitializer) {
+            // Check if it's a field of current class or any parent class
+            std::string currentClassName = currentClass->name;
+            while (currentClassName != "Object") {
+                auto classIt = classes.find(currentClassName);
+                if (classIt == classes.end()) break;
+                
+                auto fieldIt = classIt->second.fields.find(objectId->name);
+                if (fieldIt != classIt->second.fields.end()) {
+                    fieldInitializerError = true;
+                    reportError(1, 1, "cannot use class fields in field initializers.");
+                    reportError(1, 1, "use of unbound variable " + objectId->name);
+                    return Type::Error();
+                }
+                
+                currentClassName = classIt->second.parent;
+            }
+            
+            // Check Object class as well
+            auto objectIt = classes.find("Object");
+            if (objectIt != classes.end()) {
+                auto fieldIt = objectIt->second.fields.find(objectId->name);
+                if (fieldIt != objectIt->second.fields.end()) {
+                    fieldInitializerError = true;
+                    reportError(1, 1, "cannot use class fields in field initializers.");
+                    reportError(1, 1, "use of unbound variable " + objectId->name);
+                    return Type::Error();
+                }
+            }
+        }
+        
         // Check local variables first
         bool found = false;
         Type localType = getVariableType(objectId->name, found);
@@ -837,6 +885,15 @@ namespace VSOP
     {
         (void)self; // Suppress unused parameter warning
         (void)expectedType; // Suppress unused parameter warning
+        
+        // Check if we're in a field initializer
+        if (inFieldInitializer) {
+            fieldInitializerError = true;
+            reportError(1, 1, "cannot use self in field initializer.");
+            reportError(1, 1, "use of unbound variable self");
+            return Type::Error();
+        }
+        
         if (!currentClass) {
             reportError(1, 1, "self used outside of class context");
             return Type::Error();

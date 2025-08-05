@@ -160,6 +160,7 @@ namespace VSOP
         // Current method being analyzed
         const MethodSignature* currentMethod;
         bool inFieldInitializer = false;  // Track if we're in a field initializer context
+        bool fieldInitializerError = false;  // Track if we've already reported field initializer errors
 
         // Helper methods
         void reportError(int line, int column, const std::string& message);
