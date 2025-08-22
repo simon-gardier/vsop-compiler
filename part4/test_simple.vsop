@@ -1,0 +1,13 @@
+class Main {
+    field x: int32;
+    
+    method main(): unit {
+        let x: int32 = 42 in
+        if x < 50 then
+            x = x + 1
+        else
+            x = x - 1
+        fi
+    }
+}
+
