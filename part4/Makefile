@@ -9,7 +9,7 @@ LLVM_LDFLAGS	= $(shell $(LLVM_CONFIG) --ldflags 2>/dev/null || echo "")
 LLVM_LIBS		= $(shell $(LLVM_CONFIG) --libs core irreader support 2>/dev/null || echo "-lLLVMCore -lLLVMIRReader -lLLVMSupport")
 
 # Add LLVM flags to CXXFLAGS
-CXXFLAGS += $(LLVM_CXXFLAGS)
+CXXFLAGS += $(LLVM_CXXFLAGS) -fexceptions
 
 BISONFLAGS 		= -d -v
 
