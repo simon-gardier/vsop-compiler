@@ -19,8 +19,7 @@ enum class Mode
     LEX,
     PARSE,
     SEMANTIC,
-    CODE_GEN,
-    NATIVE_EXEC
+    CODE_GEN
 };
 
 static const map<string, Mode> flag_to_mode = {
@@ -38,7 +37,7 @@ int main(int argc, char const *argv[])
 
     if (argc == 2)
     {
-        mode = Mode::NATIVE_EXEC; // Default: generate native executable
+        mode = Mode::CODE_GEN; // Default: code generation
         source_file = argv[1];
     }
     else if (argc == 3)
@@ -51,33 +50,9 @@ int main(int argc, char const *argv[])
         mode = flag_to_mode.at(argv[1]);
         source_file = argv[2];
     }
-    else if (argc == 4)
-    {
-        if (string(argv[1]) == "-e" && string(argv[2]) == "-i")
-        {
-            extended_vsop = true;
-            mode = Mode::CODE_GEN;
-            source_file = argv[3];
-        }
-        else if (string(argv[1]) == "-e")
-        {
-            extended_vsop = true;
-            mode = Mode::NATIVE_EXEC;
-            source_file = argv[2];
-        }
-        else
-        {
-            cerr << "Usage: " << argv[0] << " [-l|-p|-c|-i] <source_file>" << endl;
-            cerr << "       " << argv[0] << " -e <source_file>" << endl;
-            cerr << "       " << argv[0] << " -e -i <source_file>" << endl;
-            return -1;
-        }
-    }
     else
     {
         cerr << "Usage: " << argv[0] << " [-l|-p|-c|-i] <source_file>" << endl;
-        cerr << "       " << argv[0] << " -e <source_file>" << endl;
-        cerr << "       " << argv[0] << " -e -i <source_file>" << endl;
         return -1;
     }
 
@@ -130,38 +105,6 @@ int main(int argc, char const *argv[])
             }
         }
         return res;
-
-    case Mode::NATIVE_EXEC:
-        res = driver.parse();
-        if (res == 0)
-        {
-            if (driver.semanticAnalyzer)
-            {
-                // Generate native executable
-                string output_name = source_file;
-                if (output_name.substr(output_name.length() - 5) == ".vsop")
-                {
-                    output_name = output_name.substr(0, output_name.length() - 5);
-                }
-
-                if (driver.generateNativeExecutable(output_name))
-                {
-                    cout << "Successfully generated executable: " << output_name << endl;
-                }
-                else
-                {
-                    cerr << "Failed to generate native executable" << endl;
-                    return -1;
-                }
-            }
-            else
-            {
-                cerr << "Semantic analysis failed, cannot generate code" << endl;
-                return -1;
-            }
-        }
-        return res;
     }
-
     return 0;
 }

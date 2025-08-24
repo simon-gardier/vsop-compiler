@@ -70,14 +70,6 @@ namespace VSOP
         void generateLLVMIR();
 
         /**
-         * @brief Generate native executable from LLVM IR.
-         *
-         * @param output_name The name of the output executable.
-         * @return true if successful, false otherwise.
-         */
-        bool generateNativeExecutable(const std::string &output_name);
-
-        /**
          * @brief The AST representing the program
          */
         std::unique_ptr<ProgramAst> programAst;
