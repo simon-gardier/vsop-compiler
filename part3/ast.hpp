@@ -20,7 +20,7 @@ namespace VSOP
     class MethodAst;
     class FormalAst;
 
-    class Ast 
+    class Ast
     {
     public:
         virtual ~Ast() = default;
@@ -44,7 +44,7 @@ namespace VSOP
 
         /**
          * @brief Get string representation of the program
-         * 
+         *
          * @return std::string String representation of the program
          */
         std::string getString() const;
@@ -52,7 +52,7 @@ namespace VSOP
         /**
          * @brief Vector of classes in the program
          */
-        std::vector<ClassAst*> classes;
+        std::vector<ClassAst *> classes;
     };
 
     /**
@@ -63,11 +63,11 @@ namespace VSOP
     public:
         /**
          * @brief Constructor for ClassAst
-         * 
+         *
          * @param name Name of the class
          * @param parent Parent class name (optional)
          */
-        ClassAst(const std::string& name, const std::string& parent = "Object") 
+        ClassAst(const std::string &name, const std::string &parent = "Object")
             : name(name), parent(parent) {}
 
         /**
@@ -77,7 +77,7 @@ namespace VSOP
 
         /**
          * @brief Get string representation of the class
-         * 
+         *
          * @return std::string String representation of the class
          */
         std::string getString() const;
@@ -95,12 +95,12 @@ namespace VSOP
         /**
          * @brief Fields of the class
          */
-        std::vector<FieldAst*> fields;
+        std::vector<FieldAst *> fields;
 
         /**
          * @brief Methods of the class
          */
-        std::vector<MethodAst*> methods;
+        std::vector<MethodAst *> methods;
     };
 
     /**
@@ -111,12 +111,12 @@ namespace VSOP
     public:
         /**
          * @brief Constructor for FieldAst
-         * 
+         *
          * @param name Field name
          * @param type Field type
          * @param initExpr Initialization expression (optional)
          */
-        FieldAst(const std::string& name, const std::string& type, ExprAst* initExpr = nullptr)
+        FieldAst(const std::string &name, const std::string &type, ExprAst *initExpr = nullptr)
             : name(name), type(type), initExpr(initExpr) {}
 
         /**
@@ -126,7 +126,7 @@ namespace VSOP
 
         /**
          * @brief Get string representation of the field
-         * 
+         *
          * @return std::string String representation of the field
          */
         std::string getString() const;
@@ -144,7 +144,7 @@ namespace VSOP
         /**
          * @brief Initialization expression (optional)
          */
-        ExprAst* initExpr;
+        ExprAst *initExpr;
     };
 
     /**
@@ -155,16 +155,16 @@ namespace VSOP
     public:
         /**
          * @brief Constructor for FormalAst
-         * 
+         *
          * @param name Parameter name
          * @param type Parameter type
          */
-        FormalAst(const std::string& name, const std::string& type)
+        FormalAst(const std::string &name, const std::string &type)
             : name(name), type(type) {}
 
         /**
          * @brief Get string representation of the formal parameter
-         * 
+         *
          * @return std::string String representation of the formal parameter
          */
         std::string getString() const;
@@ -188,12 +188,12 @@ namespace VSOP
     public:
         /**
          * @brief Constructor for MethodAst
-         * 
+         *
          * @param name Method name
          * @param returnType Return type
          * @param body Method body
          */
-        MethodAst(const std::string& name, const std::string& returnType, ExprAst* body)
+        MethodAst(const std::string &name, const std::string &returnType, ExprAst *body)
             : name(name), returnType(returnType), body(body) {}
 
         /**
@@ -203,7 +203,7 @@ namespace VSOP
 
         /**
          * @brief Get string representation of the method
-         * 
+         *
          * @return std::string String representation of the method
          */
         std::string getString() const;
@@ -216,7 +216,7 @@ namespace VSOP
         /**
          * @brief Formal parameters
          */
-        std::vector<FormalAst*> formals;
+        std::vector<FormalAst *> formals;
 
         /**
          * @brief Return type
@@ -226,7 +226,7 @@ namespace VSOP
         /**
          * @brief Method body
          */
-        ExprAst* body;
+        ExprAst *body;
     };
 
     /**
@@ -237,13 +237,17 @@ namespace VSOP
     public:
         virtual ~ExprAst() = default;
         virtual std::string getString() const = 0;
-        
+
         // Type information for semantic analysis
         std::string type = "";
         bool hasType = false;
-        
-        void setType(const std::string& t) { type = t; hasType = true; }
-        const std::string& getType() const { return type; }
+
+        void setType(const std::string &t)
+        {
+            type = t;
+            hasType = true;
+        }
+        const std::string &getType() const { return type; }
         bool hasTypeInfo() const { return hasType; }
     };
 
@@ -256,7 +260,7 @@ namespace VSOP
         BlockExprAst() {}
         ~BlockExprAst() override;
         std::string getString() const override;
-        std::vector<ExprAst*> expressions;
+        std::vector<ExprAst *> expressions;
     };
 
     /**
@@ -265,13 +269,13 @@ namespace VSOP
     class IfExprAst : public ExprAst
     {
     public:
-        IfExprAst(ExprAst* condition, ExprAst* thenExpr, ExprAst* elseExpr = nullptr)
+        IfExprAst(ExprAst *condition, ExprAst *thenExpr, ExprAst *elseExpr = nullptr)
             : condition(condition), thenExpr(thenExpr), elseExpr(elseExpr) {}
         ~IfExprAst() override;
         std::string getString() const override;
-        ExprAst* condition;
-        ExprAst* thenExpr;
-        ExprAst* elseExpr;
+        ExprAst *condition;
+        ExprAst *thenExpr;
+        ExprAst *elseExpr;
     };
 
     /**
@@ -280,12 +284,12 @@ namespace VSOP
     class WhileExprAst : public ExprAst
     {
     public:
-        WhileExprAst(ExprAst* condition, ExprAst* body)
+        WhileExprAst(ExprAst *condition, ExprAst *body)
             : condition(condition), body(body) {}
         ~WhileExprAst() override;
         std::string getString() const override;
-        ExprAst* condition;
-        ExprAst* body;
+        ExprAst *condition;
+        ExprAst *body;
     };
 
     /**
@@ -294,15 +298,15 @@ namespace VSOP
     class LetExprAst : public ExprAst
     {
     public:
-        LetExprAst(const std::string& name, const std::string& type, 
-                  ExprAst* initExpr, ExprAst* scopeExpr)
+        LetExprAst(const std::string &name, const std::string &type,
+                   ExprAst *initExpr, ExprAst *scopeExpr)
             : name(name), type(type), initExpr(initExpr), scopeExpr(scopeExpr) {}
         ~LetExprAst() override;
         std::string getString() const override;
         std::string name;
         std::string type;
-        ExprAst* initExpr;
-        ExprAst* scopeExpr;
+        ExprAst *initExpr;
+        ExprAst *scopeExpr;
     };
 
     /**
@@ -311,12 +315,12 @@ namespace VSOP
     class AssignExprAst : public ExprAst
     {
     public:
-        AssignExprAst(const std::string& name, ExprAst* expr)
+        AssignExprAst(const std::string &name, ExprAst *expr)
             : name(name), expr(expr) {}
         ~AssignExprAst() override;
         std::string getString() const override;
         std::string name;
-        ExprAst* expr;
+        ExprAst *expr;
     };
 
     /**
@@ -325,12 +329,12 @@ namespace VSOP
     class UnaryOpExprAst : public ExprAst
     {
     public:
-        UnaryOpExprAst(const std::string& op, ExprAst* expr)
+        UnaryOpExprAst(const std::string &op, ExprAst *expr)
             : op(op), expr(expr) {}
         ~UnaryOpExprAst() override;
         std::string getString() const override;
         std::string op;
-        ExprAst* expr;
+        ExprAst *expr;
     };
 
     /**
@@ -339,13 +343,13 @@ namespace VSOP
     class BinaryOpExprAst : public ExprAst
     {
     public:
-        BinaryOpExprAst(const std::string& op, ExprAst* left, ExprAst* right)
+        BinaryOpExprAst(const std::string &op, ExprAst *left, ExprAst *right)
             : op(op), left(left), right(right) {}
         ~BinaryOpExprAst() override;
         std::string getString() const override;
         std::string op;
-        ExprAst* left;
-        ExprAst* right;
+        ExprAst *left;
+        ExprAst *right;
     };
 
     /**
@@ -354,13 +358,13 @@ namespace VSOP
     class CallExprAst : public ExprAst
     {
     public:
-        CallExprAst(ExprAst* object, const std::string& methodName)
+        CallExprAst(ExprAst *object, const std::string &methodName)
             : object(object), methodName(methodName) {}
         ~CallExprAst() override;
         std::string getString() const override;
-        ExprAst* object;
+        ExprAst *object;
         std::string methodName;
-        std::vector<ExprAst*> arguments;
+        std::vector<ExprAst *> arguments;
     };
 
     /**
@@ -369,7 +373,7 @@ namespace VSOP
     class NewExprAst : public ExprAst
     {
     public:
-        NewExprAst(const std::string& typeName)
+        NewExprAst(const std::string &typeName)
             : typeName(typeName) {}
         ~NewExprAst() override;
         std::string getString() const override;
@@ -382,7 +386,7 @@ namespace VSOP
     class ObjectIdExprAst : public ExprAst
     {
     public:
-        ObjectIdExprAst(const std::string& name)
+        ObjectIdExprAst(const std::string &name)
             : name(name) {}
         ~ObjectIdExprAst() override;
         std::string getString() const override;
@@ -419,7 +423,7 @@ namespace VSOP
     class StringLiteralExprAst : public ExprAst
     {
     public:
-        StringLiteralExprAst(const std::string& value)
+        StringLiteralExprAst(const std::string &value)
             : value(value) {}
         ~StringLiteralExprAst() override;
         std::string getString() const override;

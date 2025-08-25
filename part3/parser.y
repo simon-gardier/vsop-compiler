@@ -128,12 +128,10 @@
 %left DOT
 %nonassoc WHILE_PREC
 
-// Define operator precedence and associativity
-
 %%
 // Grammar rules for VSOP language
 
-// Program is a list of classes
+// Program (list of classes)
 program
     : class_list
         {
